@@ -52,8 +52,7 @@
           "properties": {
             "url": {
               "type": "string",
-              "format": "uri",
-              "description": "HTTP endpoint URL"
+              "description": "HTTP endpoint URL (may contain ${ENV_VAR} template placeholders)"
             },
             "command": {
               "type": "array",
