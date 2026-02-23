@@ -5,7 +5,7 @@ registry:
   description: "Curated MCP servers for MCP Ambassador"
   maintainer: "zervin"
   url: "https://github.com/zervin/mcpambassador_community_mcps"
-  updated_at: "2026-02-22T00:00:00Z"
+  updated_at: "2026-02-23T00:00:00Z"
 
 mcps:
   - name: github
@@ -69,7 +69,7 @@ mcps:
           description: "Your Alpha Vantage API key (free at alphavantage.co)"
       required:
         - ALPHA_VANTAGE_API_KEY
-    isolation_mode: shared
+    isolation_mode: per_user
     tags: ["finance", "stocks", "data", "api"]
     category: "Finance & Data"
     repository_url: "https://github.com/alphavantage/mcp"
@@ -97,7 +97,7 @@ mcps:
           description: "Your Tavily API key (get one at tavily.com)"
       required:
         - TAVILY_API_KEY
-    isolation_mode: shared
+    isolation_mode: per_user
     tags: ["search", "web", "ai", "api"]
     category: "Search & Web"
     documentation_url: "https://docs.tavily.com/"
@@ -142,11 +142,210 @@ mcps:
           description: "Your Notion internal integration token (create at notion.so/my-integrations)"
       required:
         - NOTION_API_KEY
-    isolation_mode: shared
+    isolation_mode: per_user
     tags: ["productivity", "notes", "databases", "official"]
     category: "Productivity"
     repository_url: "https://github.com/makenotion/notion-mcp-server"
     documentation_url: "https://github.com/makenotion/notion-mcp-server#readme"
     version: "1.0.0"
     maintainer: "Notion"
+    verified: true
+
+  - name: firecrawl
+    display_name: "Firecrawl"
+    description: "Turn websites into LLM-ready data. Scrape, crawl, and extract clean markdown or structured data from any URL."
+    icon_url: "https://www.firecrawl.dev/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "firecrawl-mcp"]
+      env:
+        FIRECRAWL_API_KEY: "${FIRECRAWL_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        FIRECRAWL_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Firecrawl API key (get one at firecrawl.dev)"
+      required:
+        - FIRECRAWL_API_KEY
+    isolation_mode: per_user
+    tags: ["web-scraping", "crawling", "data-extraction"]
+    category: "Data & Web Scraping"
+    repository_url: "https://github.com/mendableai/firecrawl-mcp-server"
+    documentation_url: "https://docs.firecrawl.dev/"
+    version: "1.0.0"
+    maintainer: "Mendable"
+    verified: true
+
+  - name: brave-search
+    display_name: "Brave Search"
+    description: "Web and local search using the Brave Search API. Get clean search results optimized for AI consumption."
+    icon_url: "https://brave.com/static-assets/images/brave-logo-sans-text.svg"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-brave-search"]
+      env:
+        BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        BRAVE_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Brave Search API key (get one at brave.com/search/api)"
+      required:
+        - BRAVE_API_KEY
+    isolation_mode: per_user
+    tags: ["search", "web", "privacy"]
+    category: "Search & Web"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-brave-search"
+    documentation_url: "https://brave.com/search/api/"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: fetch
+    display_name: "Fetch"
+    description: "Fetch and convert web content to markdown. Retrieve any URL and get clean, readable content for LLM processing."
+    icon_url: null
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-fetch"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["web", "fetch", "markdown", "utility"]
+    category: "Utilities"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch"
+    documentation_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch#readme"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: puppeteer
+    display_name: "Puppeteer"
+    description: "Browser automation using Puppeteer. Navigate pages, take screenshots, fill forms, and extract content from websites."
+    icon_url: "https://pptr.dev/img/puppeteer.png"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-puppeteer"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["browser", "automation", "screenshots", "web"]
+    category: "Browser & Automation"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-puppeteer"
+    documentation_url: "https://pptr.dev/"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: sequential-thinking
+    display_name: "Sequential Thinking"
+    description: "Dynamic, reflective problem-solving through sequential thinking. Break down complex problems into manageable steps with revision and branching."
+    icon_url: null
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-sequential-thinking"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["reasoning", "thinking", "problem-solving"]
+    category: "AI & Reasoning"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-sequential-thinking"
+    documentation_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-sequential-thinking#readme"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: exa
+    display_name: "Exa"
+    description: "AI-powered web search with neural search capabilities. Find relevant content using meaning-based search, not just keywords."
+    icon_url: "https://exa.ai/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "exa-mcp-server"]
+      env:
+        EXA_API_KEY: "${EXA_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        EXA_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Exa API key (get one at exa.ai)"
+      required:
+        - EXA_API_KEY
+    isolation_mode: per_user
+    tags: ["search", "ai", "neural-search"]
+    category: "Search & Web"
+    repository_url: "https://github.com/exa-labs/exa-mcp-server"
+    documentation_url: "https://docs.exa.ai/"
+    version: "1.0.0"
+    maintainer: "Exa"
+    verified: true
+
+  - name: sentry
+    display_name: "Sentry"
+    description: "Sentry's official MCP server. Search and analyze errors, retrieve issue details, and query Sentry projects."
+    icon_url: "https://sentry.io/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@sentry/mcp-server"]
+      env:
+        SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        SENTRY_AUTH_TOKEN:
+          type: string
+          title: "Auth Token"
+          description: "Your Sentry auth token (generate at sentry.io/settings/auth-tokens)"
+      required:
+        - SENTRY_AUTH_TOKEN
+    isolation_mode: per_user
+    tags: ["error-tracking", "monitoring", "debugging", "official"]
+    category: "Developer Tools"
+    repository_url: "https://github.com/getsentry/sentry-mcp"
+    documentation_url: "https://docs.sentry.io/"
+    version: "1.0.0"
+    maintainer: "Sentry"
+    verified: true
+
+  - name: slack
+    display_name: "Slack"
+    description: "Interact with Slack workspaces. Read and post messages, manage channels, and search conversation history."
+    icon_url: "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-slack"]
+      env:
+        SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        SLACK_BOT_TOKEN:
+          type: string
+          title: "Bot OAuth Token"
+          description: "Your Slack Bot OAuth token (create at api.slack.com/apps)"
+      required:
+        - SLACK_BOT_TOKEN
+    isolation_mode: per_user
+    tags: ["messaging", "communication", "collaboration"]
+    category: "Communication"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-slack"
+    documentation_url: "https://api.slack.com/docs"
+    version: "1.0.0"
+    maintainer: "Anthropic"
     verified: true
