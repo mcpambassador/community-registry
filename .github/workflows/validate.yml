@@ -1,0 +1,59 @@
+name: Validate Registry
+
+on:
+  push:
+    branches: [main]
+    paths: ['registry.yaml']
+  pull_request:
+    branches: [main]
+    paths: ['registry.yaml']
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install js-yaml ajv ajv-formats
+
+      - name: Validate registry
+        run: |
+          node -e "
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const Ajv = require('ajv');
+          const addFormats = require('ajv-formats');
+
+          // Load and parse YAML
+          const registry = yaml.load(fs.readFileSync('registry.yaml', 'utf8'));
+          console.log('✓ YAML syntax valid');
+
+          // Load and validate against schema
+          const schema = JSON.parse(fs.readFileSync('schema/registry.schema.json', 'utf8'));
+          const ajv = new Ajv({ allErrors: true });
+          addFormats(ajv);
+          const validate = ajv.compile(schema);
+
+          if (!validate(registry)) {
+            console.error('✗ Schema validation failed:');
+            validate.errors.forEach(e => console.error('  -', e.instancePath, e.message));
+            process.exit(1);
+          }
+          console.log('✓ Schema validation passed');
+
+          // Check for duplicate names
+          const names = registry.mcps.map(m => m.name);
+          const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+          if (dupes.length > 0) {
+            console.error('✗ Duplicate names:', dupes);
+            process.exit(1);
+          }
+          console.log('✓ No duplicate names');
+          console.log('✓ Registry valid (' + registry.mcps.length + ' MCPs)');
+          "

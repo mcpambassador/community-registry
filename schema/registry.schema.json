@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/zervin/mcpambassador_community_mcps/schema/registry.schema.json",
+  "title": "MCP Ambassador Community Registry",
+  "description": "Schema for the MCP Ambassador community registry YAML file",
+  "type": "object",
+  "required": ["schema_version", "mcps"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": ["1.0"],
+      "description": "Registry schema version"
+    },
+    "mcps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/McpEntry"
+      }
+    }
+  },
+  "definitions": {
+    "McpEntry": {
+      "type": "object",
+      "required": ["name", "display_name", "description", "transport_type", "config", "auth_type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "description": "Unique lowercase identifier"
+        },
+        "display_name": {
+          "type": "string",
+          "description": "Human-readable display name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description of the MCP server"
+        },
+        "icon_url": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL to an icon image"
+        },
+        "transport_type": {
+          "type": "string",
+          "enum": ["http", "stdio"],
+          "description": "Transport protocol"
+        },
+        "config": {
+          "type": "object",
+          "description": "Transport configuration",
+          "properties": {
+            "url": {
+              "type": "string",
+              "format": "uri",
+              "description": "HTTP endpoint URL"
+            },
+            "command": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Command and arguments for stdio transport"
+            },
+            "env": {
+              "type": "object",
+              "additionalProperties": { "type": "string" },
+              "description": "Environment variables"
+            }
+          }
+        },
+        "auth_type": {
+          "type": "string",
+          "enum": ["none", "static", "oauth2"],
+          "description": "Authentication type"
+        },
+        "oauth_config": {
+          "type": "object",
+          "properties": {
+            "auth_url": { "type": "string", "format": "uri" },
+            "token_url": { "type": "string", "format": "uri" },
+            "scopes": { "type": "string" },
+            "client_id_env": { "type": "string" },
+            "client_secret_env": { "type": "string" },
+            "access_token_env_var": { "type": "string" }
+          },
+          "required": ["auth_url", "token_url"]
+        },
+        "credential_schema": {
+          "type": "object",
+          "description": "JSON Schema for required credentials"
+        },
+        "isolation_mode": {
+          "type": "string",
+          "enum": ["shared", "per_user"],
+          "description": "Whether the MCP is shared or per-user"
+        },
+        "requires_user_credentials": {
+          "type": "boolean"
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "category": {
+          "type": "string"
+        },
+        "repository_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "documentation_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "version": {
+          "type": "string"
+        },
+        "maintainer": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
