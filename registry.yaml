@@ -4,7 +4,7 @@ registry:
   name: "MCP Ambassador Community Registry"
   description: "Curated MCP servers for MCP Ambassador"
   maintainer: "zervin"
-  url: "https://github.com/zervin/mcpambassador_community_mcps"
+  url: "https://github.com/mcpambassador/community-registry"
   updated_at: "2026-02-23T00:00:00Z"
 
 mcps:

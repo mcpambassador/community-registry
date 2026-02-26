@@ -1,0 +1,167 @@
+name: Validate Registry
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'registry.yaml'
+      - 'schema/**'
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-schema:
+    name: Validate registry.yaml against schema
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install validation dependencies
+        run: npm install --no-save ajv ajv-formats js-yaml
+
+      - name: Validate registry.yaml
+        id: validate
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const Ajv = require('ajv');
+          const addFormats = require('ajv-formats');
+
+          const ajv = new Ajv({ allErrors: true, strict: false });
+          addFormats(ajv);
+
+          const schema = JSON.parse(fs.readFileSync('schema/registry.schema.json', 'utf8'));
+          const registry = yaml.load(fs.readFileSync('registry.yaml', 'utf8'));
+
+          const validate = ajv.compile(schema);
+          const valid = validate(registry);
+
+          if (!valid) {
+            console.error('Schema validation FAILED:');
+            validate.errors.forEach(err => {
+              console.error(`  ${err.instancePath || '(root)'}: ${err.message}`);
+            });
+            process.exit(1);
+          }
+
+          console.log(`Schema validation passed. Registry contains ${registry.mcps.length} entries.`);
+          EOF
+
+      - name: Check for duplicate names
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const registry = yaml.load(fs.readFileSync('registry.yaml', 'utf8'));
+          const names = registry.mcps.map(m => m.name);
+          const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+          if (dupes.length > 0) {
+            console.error('Duplicate entry names found:', dupes.join(', '));
+            process.exit(1);
+          }
+          console.log('No duplicate names. All entry names are unique.');
+          EOF
+
+      - name: Security checks on new entries
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const { execSync } = require('child_process');
+
+          const registry = yaml.load(fs.readFileSync('registry.yaml', 'utf8'));
+          const errors = [];
+          const warnings = [];
+
+          // Get changed entries by comparing with base (approximate)
+          for (const mcp of registry.mcps) {
+            // Check HTTP transport uses HTTPS
+            if (mcp.transport_type === 'http' && mcp.config && mcp.config.url) {
+              if (!mcp.config.url.startsWith('https://') && !mcp.config.url.startsWith('${')) {
+                errors.push(`[${mcp.name}] config.url must use HTTPS: ${mcp.config.url}`);
+              }
+            }
+
+            // Check stdio commands don't pipe to shell
+            if (mcp.transport_type === 'stdio' && mcp.config && mcp.config.command) {
+              const cmd = mcp.config.command.join(' ');
+              if (cmd.includes('bash -c') || cmd.includes('sh -c') || cmd.includes('| sh') || cmd.includes('| bash')) {
+                errors.push(`[${mcp.name}] Suspicious command pattern (piping to shell): ${cmd}`);
+              }
+              if (cmd.includes('curl') && (cmd.includes('| sh') || cmd.includes('| bash'))) {
+                errors.push(`[${mcp.name}] Remote code execution pattern detected: ${cmd}`);
+              }
+            }
+
+            // Check for private/localhost URLs
+            if (mcp.config && mcp.config.url) {
+              const url = mcp.config.url;
+              if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes('192.168.') || url.includes('10.0.') || url.includes('172.16.')) {
+                errors.push(`[${mcp.name}] config.url points to private/local address: ${url}`);
+              }
+            }
+
+            // Warn about missing documentation
+            if (!mcp.repository_url && !mcp.documentation_url) {
+              warnings.push(`[${mcp.name}] Missing repository_url and documentation_url`);
+            }
+          }
+
+          if (warnings.length > 0) {
+            console.warn('Warnings:');
+            warnings.forEach(w => console.warn(' ', w));
+          }
+
+          if (errors.length > 0) {
+            console.error('Security check FAILED:');
+            errors.forEach(e => console.error(' ', e));
+            process.exit(1);
+          }
+
+          console.log('Security checks passed.');
+          EOF
+
+      - name: Post validation summary comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const outcome = '${{ job.status }}';
+            const icon = outcome === 'success' ? '✅' : '❌';
+
+            const body = `## ${icon} Registry Validation ${outcome === 'success' ? 'Passed' : 'Failed'}
+
+            ${outcome !== 'success' ? '**One or more validation checks failed.** See the workflow run for details.\n\nCommon issues:\n- Schema validation error: check required fields and field formats\n- Duplicate name: each entry must have a unique `name`\n- Security check: `http` transport must use HTTPS; `stdio` commands must not pipe to shell' : 'All checks passed:\n- ✅ JSON Schema validation\n- ✅ No duplicate entry names\n- ✅ Security pattern checks'}`;
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            const existing = comments.data.find(c => c.body.includes('Registry Validation'));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body
+              });
+            }

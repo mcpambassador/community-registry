@@ -1,6 +1,6 @@
 # MCP Ambassador Community Registry
 
-A curated registry of MCP (Model Context Protocol) servers for use with [MCP Ambassador](https://github.com/zervin/mcpambassador_server).
+A curated registry of MCP (Model Context Protocol) servers for use with [MCP Ambassador](https://github.com/mcpambassador/server).
 
 ## What is this?
 
@@ -22,7 +22,7 @@ This repository contains `registry.yaml` — a machine-readable catalog of MCP s
 MCP Ambassador automatically fetches this registry. No configuration needed — it uses:
 
 ```
-https://raw.githubusercontent.com/zervin/mcpambassador_community_mcps/main/registry.yaml
+https://raw.githubusercontent.com/mcpambassador/community-registry/main/registry.yaml
 ```
 
 To use a custom or private registry, set the `REGISTRY_URL` environment variable.

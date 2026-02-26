@@ -1,0 +1,38 @@
+name: Stale Issues and PRs
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+jobs:
+  stale:
+    name: Mark stale and close
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-issue-stale: 30
+          days-before-issue-close: 30
+          stale-issue-label: stale
+          exempt-issue-labels: 'pinned,mcp-request,security'
+          stale-issue-message: |
+            This issue has been inactive for 30 days. It will be closed in 30 more days unless there is new activity.
+
+            If you'd like to add the requested MCP yourself, see [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md).
+          close-issue-message: |
+            Closed due to inactivity. Feel free to reopen or open a PR to add the MCP yourself!
+          days-before-pr-stale: 14
+          days-before-pr-close: 7
+          stale-pr-label: stale
+          exempt-pr-labels: 'pinned,in-progress'
+          stale-pr-message: |
+            This PR has been inactive for 14 days. It will be closed in 7 more days unless updated.
+
+            Need help? Leave a comment and a maintainer will assist.
+          close-pr-message: |
+            Closed due to inactivity. Please reopen and rebase if you'd like to continue.

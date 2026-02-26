@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://github.com/zervin/mcpambassador_community_mcps/schema/registry.schema.json",
+  "$id": "https://github.com/mcpambassador/community-registry/schema/registry.schema.json",
   "title": "MCP Ambassador Community Registry",
   "description": "Schema for the MCP Ambassador community registry YAML file",
   "type": "object",

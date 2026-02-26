@@ -1,0 +1,17 @@
+# MCP Ambassador Community Registry — CODEOWNERS
+
+# All registry changes require registry maintainer review
+*                                   @mcpambassador/registry-maintainers
+
+# Schema changes are especially sensitive — any schema update
+# could break existing entries or the validation workflow
+schema/                             @mcpambassador/registry-maintainers @mcpambassador/core-reviewers
+
+# The registry itself
+registry.yaml                       @mcpambassador/registry-maintainers
+
+# CI workflows
+.github/workflows/                  @mcpambassador/devops @mcpambassador/registry-maintainers
+
+# Contributing guide
+CONTRIBUTING.md                     @mcpambassador/registry-maintainers @mcpambassador/docs-team
