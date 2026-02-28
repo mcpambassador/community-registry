@@ -2,12 +2,17 @@
 
 Thank you for helping grow the MCP ecosystem!
 
+## Code of Conduct
+Please follow our Code of Conduct: see CODE_OF_CONDUCT.md for details on expected behavior and enforcement.
+
+## Security Concerns
+If you discover a malicious MCP entry or a security issue with an existing entry, do NOT open a public issue. See .github/SECURITY.md for private reporting.
+
 ## Adding a New MCP
 
 1. Fork this repository
 2. Edit `registry.yaml` and add your MCP entry
-3. Run validation: `npm run validate` (or check CI)
-4. Submit a pull request
+3. Submit a pull request -- validation runs automatically in CI
 
 ## Entry Format
 
@@ -82,12 +87,27 @@ Add an `oauth_config`:
 
 ## Categories
 
-Current categories:
+Current categories (as recognized by automation):
+- AI & Reasoning
+- Automation & Integration
+- Browser & Automation
+- Cloud & Infrastructure
+- Commerce & Payments
+- Communication
+- Creative
+- Data & Web Scraping
+- Database & Backend
+- Design
 - Developer Tools
+- DevOps & Monitoring
 - Finance & Data
-- Search & Web
+- Game Development
+- Maps & Location
 - Productivity
+- Project Management
+- Search & Web
 - Utilities
+- Visualization
 
 Propose new categories in your PR if none fit.
 
@@ -99,3 +119,33 @@ The CI pipeline validates:
 - Unique MCP names
 - Valid transport and auth types
 - URL format validation
+
+## What to Expect from Automation
+
+When you open an issue:
+- Labels added automatically based on keywords (mcp-request, registry-issue, security)
+- needs-triage label added
+
+When you open a PR modifying registry.yaml:
+- First-time contributors receive a welcome message with a submission checklist
+- Automated validation runs and posts a summary comment (schema check, duplicate check, security patterns)
+- Category, transport type, and auth type labels are auto-added based on your entry
+- PRs inactive for 14+ days marked stale; 21+ days auto-closed
+
+## Reporting Issues
+
+- **Broken or outdated entry**: Use the "Registry Issue" template
+- **Request a new MCP**: Use the "MCP Request" template
+- **Malicious entry**: Report privately via .github/SECURITY.md
+
+## AI-Assisted Contributions
+
+We welcome AI-assisted contributions. This repo includes .github/copilot-instructions.md with rules that AI tools follow. AI tools can help generate properly formatted YAML entries.
+
+## Getting Help
+
+Open an issue with your question, or check the [MCP Ambassador documentation](https://mcpambassador.ai).
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the Apache License 2.0.
