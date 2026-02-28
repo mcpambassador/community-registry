@@ -228,21 +228,23 @@ mcps:
 
   - name: puppeteer
     display_name: "Puppeteer"
-    description: "Browser automation using Puppeteer. Navigate pages, take screenshots, fill forms, and extract content from websites."
+    description: "Browser automation using Puppeteer. Navigate pages, take screenshots, fill forms, and extract content from websites. Note: this package is deprecated upstream; consider using Playwright MCP instead."
     icon_url: "https://pptr.dev/img/puppeteer.png"
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-puppeteer"]
+      command: ["npx", "-y", "@modelcontextprotocol/server-puppeteer"]
     auth_type: none
     isolation_mode: shared
     requires_user_credentials: false
-    tags: ["browser", "automation", "screenshots", "web"]
+    tags: ["browser", "automation", "screenshots", "web", "deprecated"]
     category: "Browser & Automation"
-    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-puppeteer"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer"
     documentation_url: "https://pptr.dev/"
     version: "1.0.0"
     maintainer: "Anthropic"
-    verified: true
+    verified: false
+    deprecated: true
+    deprecation_note: "Upstream package is deprecated. Consider using the Playwright MCP server instead."
 
   - name: sequential-thinking
     display_name: "Sequential Thinking"
@@ -848,16 +850,20 @@ mcps:
 
   - name: playwright
     display_name: "Playwright"
-    description: "Browser automation and testing with Playwright. Navigate pages, interact with elements, take screenshots, and run visual tests."
+    description: "Browser automation and testing with Playwright. Navigate pages, interact with elements, take screenshots, run visual tests, and capture accessibility snapshots."
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-playwright"]
+      command: ["npx", "-y", "@playwright/mcp@latest"]
     auth_type: none
     isolation_mode: shared
     requires_user_credentials: false
-    tags: ["testing", "browser", "automation", "e2e"]
+    tags: ["testing", "browser", "automation", "e2e", "accessibility"]
     category: "Browser & Automation"
-    version: "1.0.0"
+    repository_url: "https://github.com/microsoft/playwright-mcp"
+    documentation_url: "https://github.com/microsoft/playwright-mcp#readme"
+    version: "0.0.68"
+    maintainer: "Microsoft"
+    verified: true
 
   - name: aws-kb-retrieval
     display_name: "AWS Knowledge Base"
