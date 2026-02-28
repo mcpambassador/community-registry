@@ -1,0 +1,74 @@
+name: Welcome New Contributors
+
+on:
+  pull_request:
+    types: [opened]
+  issues:
+    types: [opened]
+
+jobs:
+  welcome:
+    name: Welcome first-time contributors
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const actor = context.actor;
+            const isPR = !!context.payload.pull_request;
+            const number = isPR
+              ? context.payload.pull_request.number
+              : context.payload.issue.number;
+
+            // Check if this user has contributed before
+            const contributions = await github.paginate(
+              github.rest.issues.listForRepo,
+              { owner, repo, state: 'all', creator: actor, per_page: 100 }
+            );
+
+            // Only welcome if this is their first contribution
+            const isFirstContribution = contributions.filter(
+              c => c.number !== number
+            ).length === 0;
+
+            if (!isFirstContribution) return;
+
+            const prMessage = `## 👋 Welcome to MCP Ambassador!
+
+            Thanks for your first contribution to the community registry, @${actor}!
+
+            Here's what happens next:
+
+            1. **Automated validation** will run on your \`registry.yaml\` changes — make sure all checks pass (green ✅)
+            2. **A maintainer** will review your submission, typically within 3–5 business days
+            3. **If changes are requested**, please address them and push new commits — no need to close/reopen the PR
+
+            ### Quick checklist while you wait
+            - [ ] Your entry has a \`repository_url\` or \`documentation_url\` so users can learn more
+            - [ ] The \`description\` clearly explains what the MCP does
+            - [ ] If it's an \`oauth2\` MCP, you've filled in \`oauth_config\`
+            - [ ] The \`name\` field is lowercase, kebab-case (e.g. \`my-cool-mcp\`)
+
+            See the [Contributing Guide](../blob/main/CONTRIBUTING.md) for full details.
+
+            Happy contributing! 🚀`;
+
+            const issueMessage = `## 👋 Welcome to MCP Ambassador!
+
+            Thanks for opening your first issue, @${actor}!
+
+            A maintainer will take a look soon. In the meantime, if you're reporting a missing MCP from the registry, the fastest path is to [open a PR](../compare) that adds it yourself — contributions are very welcome!
+
+            See the [Contributing Guide](../blob/main/CONTRIBUTING.md) for how to add an MCP entry.`;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: number,
+              body: isPR ? prMessage : issueMessage
+            });

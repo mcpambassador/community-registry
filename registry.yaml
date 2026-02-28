@@ -1,0 +1,900 @@
+schema_version: "1.0"
+
+registry:
+  name: "MCP Ambassador Community Registry"
+  description: "Curated MCP servers for MCP Ambassador"
+  maintainer: "zervin"
+  url: "https://github.com/mcpambassador/community-registry"
+  updated_at: "2026-02-23T00:00:00Z"
+
+mcps:
+  - name: github
+    display_name: "GitHub"
+    description: "GitHub's official MCP Server. Provides tools for repos, issues, PRs, code search, notifications, and user management."
+    icon_url: "https://github.githubassets.com/favicons/favicon.svg"
+    transport_type: http
+    config:
+      url: "https://api.githubcopilot.com/mcp/"
+    auth_type: oauth2
+    oauth_config:
+      auth_url: "https://github.com/login/oauth/authorize"
+      token_url: "https://github.com/login/oauth/access_token"
+      scopes: "read:user repo"
+      client_id_env: "GITHUB_OAUTH_CLIENT_ID"
+      client_secret_env: "GITHUB_OAUTH_CLIENT_SECRET"
+      access_token_env_var: "GITHUB_ACCESS_TOKEN"
+    isolation_mode: per_user
+    requires_user_credentials: false
+    tags: ["developer-tools", "version-control", "official"]
+    category: "Developer Tools"
+    repository_url: "https://github.com/github/github-mcp-server"
+    documentation_url: "https://github.com/github/github-mcp-server#readme"
+    version: "1.0.0"
+    maintainer: "GitHub"
+    verified: true
+
+  - name: context7
+    display_name: "Context7"
+    description: "Up-to-date documentation and code examples for any library. Powered by Upstash."
+    icon_url: "https://context7.com/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@upstash/context7-mcp@latest"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["documentation", "developer-tools", "libraries"]
+    category: "Developer Tools"
+    repository_url: "https://github.com/upstash/context7"
+    documentation_url: "https://context7.com/"
+    version: "2.1.1"
+    maintainer: "Upstash"
+    verified: true
+
+  - name: alpha-vantage
+    display_name: "Alpha Vantage"
+    description: "Real-time and historical financial market data, including stocks, forex, and cryptocurrency."
+    icon_url: "https://www.alphavantage.co/static/img/favicon.ico"
+    transport_type: http
+    config:
+      url: "https://mcp.alphavantage.co/mcp?apikey=${ALPHA_VANTAGE_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        ALPHA_VANTAGE_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Alpha Vantage API key (free at alphavantage.co)"
+      required:
+        - ALPHA_VANTAGE_API_KEY
+    isolation_mode: per_user
+    tags: ["finance", "stocks", "data", "api"]
+    category: "Finance & Data"
+    repository_url: "https://github.com/alphavantage/mcp"
+    documentation_url: "https://www.alphavantage.co/documentation/"
+    version: "1.0.0"
+    maintainer: "Alpha Vantage"
+    verified: true
+
+  - name: tavily-search
+    display_name: "Tavily Search"
+    description: "AI-optimized web search API. Returns clean, relevant search results and extracted content."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "tavily-mcp@latest"]
+      env:
+        TAVILY_API_KEY: "${TAVILY_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        TAVILY_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Tavily API key (get one at tavily.com)"
+      required:
+        - TAVILY_API_KEY
+    isolation_mode: per_user
+    tags: ["search", "web", "ai", "api"]
+    category: "Search & Web"
+    documentation_url: "https://docs.tavily.com/"
+    version: "0.2.17"
+    maintainer: "Tavily"
+    verified: true
+
+  - name: filesystem
+    display_name: "Filesystem"
+    description: "MCP reference server for secure file system access. Read, write, list, and search files within allowed directories."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-filesystem", "/allowed/path"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["files", "filesystem", "reference", "utility"]
+    category: "Utilities"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem"
+    documentation_url: "https://github.com/modelcontextprotocol/servers#filesystem"
+    version: "1.0.0"
+    maintainer: "MCP Project"
+    verified: true
+
+  - name: notion
+    display_name: "Notion"
+    description: "Notion's official MCP server. Search pages, create content, manage databases, and more."
+    icon_url: "https://www.notion.so/images/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@notionhq/notion-mcp-server"]
+      env:
+        OPENAPI_MCP_HEADERS: '{"Authorization": "Bearer ${NOTION_API_KEY}", "Notion-Version": "2022-06-28"}'
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        NOTION_API_KEY:
+          type: string
+          title: "Notion Integration Token"
+          description: "Your Notion internal integration token (create at notion.so/my-integrations)"
+      required:
+        - NOTION_API_KEY
+    isolation_mode: per_user
+    tags: ["productivity", "notes", "databases", "official"]
+    category: "Productivity"
+    repository_url: "https://github.com/makenotion/notion-mcp-server"
+    documentation_url: "https://github.com/makenotion/notion-mcp-server#readme"
+    version: "1.0.0"
+    maintainer: "Notion"
+    verified: true
+
+  - name: firecrawl
+    display_name: "Firecrawl"
+    description: "Turn websites into LLM-ready data. Scrape, crawl, and extract clean markdown or structured data from any URL."
+    icon_url: "https://www.firecrawl.dev/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "firecrawl-mcp"]
+      env:
+        FIRECRAWL_API_KEY: "${FIRECRAWL_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        FIRECRAWL_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Firecrawl API key (get one at firecrawl.dev)"
+      required:
+        - FIRECRAWL_API_KEY
+    isolation_mode: per_user
+    tags: ["web-scraping", "crawling", "data-extraction"]
+    category: "Data & Web Scraping"
+    repository_url: "https://github.com/mendableai/firecrawl-mcp-server"
+    documentation_url: "https://docs.firecrawl.dev/"
+    version: "1.0.0"
+    maintainer: "Mendable"
+    verified: true
+
+  - name: brave-search
+    display_name: "Brave Search"
+    description: "Web and local search using the Brave Search API. Get clean search results optimized for AI consumption."
+    icon_url: "https://brave.com/static-assets/images/brave-logo-sans-text.svg"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-brave-search"]
+      env:
+        BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        BRAVE_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Brave Search API key (get one at brave.com/search/api)"
+      required:
+        - BRAVE_API_KEY
+    isolation_mode: per_user
+    tags: ["search", "web", "privacy"]
+    category: "Search & Web"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-brave-search"
+    documentation_url: "https://brave.com/search/api/"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: fetch
+    display_name: "Fetch"
+    description: "Fetch and convert web content to markdown. Retrieve any URL and get clean, readable content for LLM processing."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-fetch"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["web", "fetch", "markdown", "utility"]
+    category: "Utilities"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch"
+    documentation_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch#readme"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: puppeteer
+    display_name: "Puppeteer"
+    description: "Browser automation using Puppeteer. Navigate pages, take screenshots, fill forms, and extract content from websites."
+    icon_url: "https://pptr.dev/img/puppeteer.png"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-puppeteer"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["browser", "automation", "screenshots", "web"]
+    category: "Browser & Automation"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-puppeteer"
+    documentation_url: "https://pptr.dev/"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: sequential-thinking
+    display_name: "Sequential Thinking"
+    description: "Dynamic, reflective problem-solving through sequential thinking. Break down complex problems into manageable steps with revision and branching."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-sequential-thinking"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["reasoning", "thinking", "problem-solving"]
+    category: "AI & Reasoning"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-sequential-thinking"
+    documentation_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-sequential-thinking#readme"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: exa
+    display_name: "Exa"
+    description: "AI-powered web search with neural search capabilities. Find relevant content using meaning-based search, not just keywords."
+    icon_url: "https://exa.ai/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "exa-mcp-server"]
+      env:
+        EXA_API_KEY: "${EXA_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        EXA_API_KEY:
+          type: string
+          title: "API Key"
+          description: "Your Exa API key (get one at exa.ai)"
+      required:
+        - EXA_API_KEY
+    isolation_mode: per_user
+    tags: ["search", "ai", "neural-search"]
+    category: "Search & Web"
+    repository_url: "https://github.com/exa-labs/exa-mcp-server"
+    documentation_url: "https://docs.exa.ai/"
+    version: "1.0.0"
+    maintainer: "Exa"
+    verified: true
+
+  - name: sentry
+    display_name: "Sentry"
+    description: "Sentry's official MCP server. Search and analyze errors, retrieve issue details, and query Sentry projects."
+    icon_url: "https://sentry.io/favicon.ico"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@sentry/mcp-server"]
+      env:
+        SENTRY_AUTH_TOKEN: "${SENTRY_AUTH_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        SENTRY_AUTH_TOKEN:
+          type: string
+          title: "Auth Token"
+          description: "Your Sentry auth token (generate at sentry.io/settings/auth-tokens)"
+      required:
+        - SENTRY_AUTH_TOKEN
+    isolation_mode: per_user
+    tags: ["error-tracking", "monitoring", "debugging", "official"]
+    category: "Developer Tools"
+    repository_url: "https://github.com/getsentry/sentry-mcp"
+    documentation_url: "https://docs.sentry.io/"
+    version: "1.0.0"
+    maintainer: "Sentry"
+    verified: true
+
+  - name: slack
+    display_name: "Slack"
+    description: "Interact with Slack workspaces. Read and post messages, manage channels, and search conversation history."
+    icon_url: "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png"
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-slack"]
+      env:
+        SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        SLACK_BOT_TOKEN:
+          type: string
+          title: "Bot OAuth Token"
+          description: "Your Slack Bot OAuth token (create at api.slack.com/apps)"
+      required:
+        - SLACK_BOT_TOKEN
+    isolation_mode: per_user
+    tags: ["messaging", "communication", "collaboration"]
+    category: "Communication"
+    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-slack"
+    documentation_url: "https://api.slack.com/docs"
+    version: "1.0.0"
+    maintainer: "Anthropic"
+    verified: true
+
+  - name: mermaid
+    display_name: "Mermaid"
+    description: "Generate and render Mermaid diagrams. Create flowcharts, sequence diagrams, class diagrams, state diagrams, and more from text descriptions."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@mermaidchart/mcp-server"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["diagrams", "visualization", "flowcharts", "documentation"]
+    category: "Visualization"
+    version: "1.0.0"
+
+  - name: markitdown
+    display_name: "MarkItDown"
+    description: "Convert various document formats (PDF, DOCX, PPTX, HTML, images) to clean Markdown. Powered by Microsoft's MarkItDown library."
+    transport_type: stdio
+    config:
+      command: ["uvx", "markitdown-mcp"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["documents", "conversion", "markdown", "pdf"]
+    category: "Utilities"
+    repository_url: "https://github.com/microsoft/markitdown"
+    maintainer: "Microsoft"
+    verified: true
+    version: "1.0.0"
+
+  - name: unity
+    display_name: "Unity"
+    description: "Interact with the Unity Editor. Create game objects, manage scenes, modify components, and control the Unity Editor remotely."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-unity"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["game-development", "unity", "3d", "editor"]
+    category: "Game Development"
+    version: "1.0.0"
+
+  - name: supabase
+    display_name: "Supabase"
+    description: "Manage Supabase projects. Query databases, manage auth users, handle storage, and interact with Edge Functions."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "supabase-mcp-server"]
+      env:
+        SUPABASE_ACCESS_TOKEN: "${SUPABASE_ACCESS_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        SUPABASE_ACCESS_TOKEN:
+          type: string
+          title: "Supabase Access Token"
+          description: "Your Supabase access token (generate at supabase.com/dashboard/account/tokens)"
+      required:
+        - SUPABASE_ACCESS_TOKEN
+    isolation_mode: per_user
+    tags: ["database", "auth", "backend", "serverless"]
+    category: "Database & Backend"
+    repository_url: "https://github.com/supabase-community/supabase-mcp"
+    maintainer: "Supabase Community"
+    verified: true
+    version: "1.0.0"
+
+  - name: stripe
+    display_name: "Stripe"
+    description: "Interact with Stripe's API. Create charges, manage customers, handle subscriptions, list invoices, and manage payment methods."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@stripe/mcp"]
+      env:
+        STRIPE_SECRET_KEY: "${STRIPE_SECRET_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        STRIPE_SECRET_KEY:
+          type: string
+          title: "Stripe Secret Key"
+          description: "Your Stripe secret key (find at dashboard.stripe.com/apikeys)"
+      required:
+        - STRIPE_SECRET_KEY
+    isolation_mode: per_user
+    tags: ["payments", "billing", "commerce", "official"]
+    category: "Commerce & Payments"
+    repository_url: "https://github.com/stripe/agent-toolkit"
+    documentation_url: "https://docs.stripe.com/"
+    maintainer: "Stripe"
+    verified: true
+    version: "1.0.0"
+
+  - name: mongodb
+    display_name: "MongoDB"
+    description: "Query and manage MongoDB Atlas databases. Run aggregations, manage collections, inspect schemas, and create indexes."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "mongodb-mcp-server"]
+      env:
+        MONGODB_CONNECTION_STRING: "${MONGODB_CONNECTION_STRING}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        MONGODB_CONNECTION_STRING:
+          type: string
+          title: "MongoDB Connection String"
+          description: "Your MongoDB connection string (find in Atlas dashboard)"
+      required:
+        - MONGODB_CONNECTION_STRING
+    isolation_mode: per_user
+    tags: ["database", "nosql", "atlas", "official"]
+    category: "Database & Backend"
+    repository_url: "https://github.com/mongodb-js/mongodb-mcp-server"
+    documentation_url: "https://www.mongodb.com/docs/"
+    maintainer: "MongoDB"
+    verified: true
+    version: "1.0.0"
+
+  - name: monday
+    display_name: "Monday.com"
+    description: "Manage Monday.com boards, items, and workflows. Create and update items, manage columns, and automate work processes."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-monday"]
+      env:
+        MONDAY_API_TOKEN: "${MONDAY_API_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        MONDAY_API_TOKEN:
+          type: string
+          title: "Monday API Token"
+          description: "Your Monday.com API token (find at monday.com/developers)"
+      required:
+        - MONDAY_API_TOKEN
+    isolation_mode: per_user
+    tags: ["project-management", "productivity", "boards"]
+    category: "Productivity"
+    version: "1.0.0"
+
+  - name: figma
+    display_name: "Figma"
+    description: "Read Figma design files. Inspect components, extract design tokens, get layout information, and translate designs to code."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "figma-mcp-server"]
+      env:
+        FIGMA_ACCESS_TOKEN: "${FIGMA_ACCESS_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        FIGMA_ACCESS_TOKEN:
+          type: string
+          title: "Figma Access Token"
+          description: "Your Figma personal access token (generate at figma.com/developers)"
+      required:
+        - FIGMA_ACCESS_TOKEN
+    isolation_mode: per_user
+    tags: ["design", "ui", "prototyping"]
+    category: "Design"
+    documentation_url: "https://www.figma.com/developers/api"
+    maintainer: "Community"
+    version: "1.0.0"
+
+  - name: todoist
+    display_name: "Todoist"
+    description: "Manage Todoist tasks and projects. Create, update, complete tasks, organize with labels and priorities, and manage projects."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "todoist-mcp-server"]
+      env:
+        TODOIST_API_TOKEN: "${TODOIST_API_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        TODOIST_API_TOKEN:
+          type: string
+          title: "Todoist API Token"
+          description: "Your Todoist API token (find at todoist.com/app/settings/integrations/developer)"
+      required:
+        - TODOIST_API_TOKEN
+    isolation_mode: per_user
+    tags: ["tasks", "productivity", "organization"]
+    category: "Productivity"
+    documentation_url: "https://developer.todoist.com/rest/v2/"
+    version: "1.0.0"
+
+  - name: zapier
+    display_name: "Zapier"
+    description: "Trigger Zapier automations and access connected apps. Execute zaps, manage workflows, and integrate with 6000+ apps through Zapier's platform."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "zapier-mcp-server"]
+      env:
+        ZAPIER_API_KEY: "${ZAPIER_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        ZAPIER_API_KEY:
+          type: string
+          title: "Zapier API Key"
+          description: "Your Zapier API key"
+      required:
+        - ZAPIER_API_KEY
+    isolation_mode: per_user
+    tags: ["automation", "integration", "workflows", "no-code"]
+    category: "Automation & Integration"
+    version: "1.0.0"
+
+  - name: postgres
+    display_name: "PostgreSQL"
+    description: "Connect to PostgreSQL databases. Run queries, inspect schemas, manage tables, and explore data with read-only safety by default."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-postgres"]
+      env:
+        POSTGRES_CONNECTION_STRING: "${POSTGRES_CONNECTION_STRING}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        POSTGRES_CONNECTION_STRING:
+          type: string
+          title: "Postgres Connection String"
+          description: "Your PostgreSQL connection string (e.g., postgresql://user:pass@host:5432/db)"
+      required:
+        - POSTGRES_CONNECTION_STRING
+    isolation_mode: per_user
+    tags: ["database", "sql", "postgresql", "reference"]
+    category: "Database & Backend"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres"
+    maintainer: "MCP Project"
+    verified: true
+    version: "1.0.0"
+
+  - name: sqlite
+    display_name: "SQLite"
+    description: "Query and manage SQLite databases. Run SQL queries, inspect schemas, create tables, and analyze data from local SQLite files."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-sqlite"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["database", "sql", "sqlite", "reference"]
+    category: "Database & Backend"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite"
+    maintainer: "MCP Project"
+    verified: true
+    version: "1.0.0"
+
+  - name: memory
+    display_name: "Memory"
+    description: "Persistent memory using a local knowledge graph. Store, retrieve, and connect information across conversations."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-memory"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["memory", "knowledge-graph", "persistence", "reference"]
+    category: "AI & Reasoning"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/memory"
+    maintainer: "MCP Project"
+    verified: true
+    version: "1.0.0"
+
+  - name: google-maps
+    display_name: "Google Maps"
+    description: "Access Google Maps services. Geocode addresses, calculate directions, find places, and get distance matrices."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-google-maps"]
+      env:
+        GOOGLE_MAPS_API_KEY: "${GOOGLE_MAPS_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        GOOGLE_MAPS_API_KEY:
+          type: string
+          title: "Google Maps API Key"
+          description: "Your Google Maps API key (get at console.cloud.google.com)"
+      required:
+        - GOOGLE_MAPS_API_KEY
+    isolation_mode: per_user
+    tags: ["maps", "geocoding", "directions", "places"]
+    category: "Maps & Location"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/google-maps"
+    maintainer: "MCP Project"
+    verified: true
+    version: "1.0.0"
+
+  - name: cloudflare
+    display_name: "Cloudflare"
+    description: "Manage Cloudflare Workers, KV storage, R2 buckets, and D1 databases. Deploy serverless functions and manage edge infrastructure."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@cloudflare/mcp-server-cloudflare"]
+      env:
+        CLOUDFLARE_API_TOKEN: "${CLOUDFLARE_API_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        CLOUDFLARE_API_TOKEN:
+          type: string
+          title: "Cloudflare API Token"
+          description: "Your Cloudflare API token (create at dash.cloudflare.com/profile/api-tokens)"
+      required:
+        - CLOUDFLARE_API_TOKEN
+    isolation_mode: per_user
+    tags: ["cloud", "serverless", "workers", "edge"]
+    category: "Cloud & Infrastructure"
+    repository_url: "https://github.com/cloudflare/mcp-server-cloudflare"
+    maintainer: "Cloudflare"
+    verified: true
+    version: "1.0.0"
+
+  - name: linear
+    display_name: "Linear"
+    description: "Manage Linear issues, projects, and cycles. Create and update issues, manage workflows, and track project progress."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "linear-mcp-server"]
+      env:
+        LINEAR_API_KEY: "${LINEAR_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        LINEAR_API_KEY:
+          type: string
+          title: "Linear API Key"
+          description: "Your Linear API key (create at linear.app/settings/api)"
+      required:
+        - LINEAR_API_KEY
+    isolation_mode: per_user
+    tags: ["project-management", "issues", "engineering"]
+    category: "Project Management"
+    documentation_url: "https://linear.app/docs"
+    maintainer: "Community"
+    version: "1.0.0"
+
+  - name: grafana
+    display_name: "Grafana"
+    description: "Query Grafana dashboards and datasources. Search dashboards, run Prometheus/Loki queries, and manage alerts."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@grafana/mcp-server"]
+      env:
+        GRAFANA_URL: "${GRAFANA_URL}"
+        GRAFANA_API_KEY: "${GRAFANA_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        GRAFANA_URL:
+          type: string
+          title: "Grafana URL"
+          description: "Your Grafana instance URL"
+        GRAFANA_API_KEY:
+          type: string
+          title: "Grafana API Key"
+          description: "Your Grafana API key (create at /org/apikeys)"
+      required:
+        - GRAFANA_URL
+        - GRAFANA_API_KEY
+    isolation_mode: per_user
+    tags: ["monitoring", "dashboards", "observability", "official"]
+    category: "DevOps & Monitoring"
+    repository_url: "https://github.com/grafana/mcp-grafana"
+    maintainer: "Grafana"
+    verified: true
+    version: "1.0.0"
+
+  - name: gitlab
+    display_name: "GitLab"
+    description: "Interact with GitLab repositories, issues, merge requests, and CI/CD pipelines. Manage projects and code reviews."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-gitlab"]
+      env:
+        GITLAB_TOKEN: "${GITLAB_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        GITLAB_TOKEN:
+          type: string
+          title: "GitLab Token"
+          description: "Your GitLab personal access token (create at gitlab.com/-/user_settings/personal_access_tokens)"
+      required:
+        - GITLAB_TOKEN
+    isolation_mode: per_user
+    tags: ["version-control", "ci-cd", "developer-tools"]
+    category: "Developer Tools"
+    documentation_url: "https://docs.gitlab.com/"
+    version: "1.0.0"
+
+  - name: docker
+    display_name: "Docker"
+    description: "Manage Docker containers, images, volumes, and networks. List, start, stop containers and inspect Docker resources."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "docker-mcp-server"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["containers", "docker", "devops", "infrastructure"]
+    category: "DevOps & Monitoring"
+    version: "1.0.0"
+
+  - name: github-models
+    display_name: "GitHub Models"
+    description: "Access AI models through GitHub Models. Run inference with GPT-4, Llama, Mistral, and other models hosted on GitHub."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-github-models"]
+      env:
+        GITHUB_TOKEN: "${GITHUB_TOKEN}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        GITHUB_TOKEN:
+          type: string
+          title: "GitHub Token"
+          description: "Your GitHub personal access token (create at github.com/settings/tokens)"
+      required:
+        - GITHUB_TOKEN
+    isolation_mode: per_user
+    tags: ["ai", "inference", "models", "github"]
+    category: "AI & Reasoning"
+    version: "1.0.0"
+
+  - name: time
+    display_name: "Time"
+    description: "Get current time in any timezone and convert between timezones. Simple utility for time-related queries."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-time"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["time", "timezone", "utility", "reference"]
+    category: "Utilities"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/time"
+    maintainer: "MCP Project"
+    verified: true
+    version: "1.0.0"
+
+  - name: everart
+    display_name: "EverArt"
+    description: "Generate AI images with various styles and models. Create, modify, and manage AI-generated artwork."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-everart"]
+      env:
+        EVERART_API_KEY: "${EVERART_API_KEY}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        EVERART_API_KEY:
+          type: string
+          title: "EverArt API Key"
+          description: "Your EverArt API key (get at everart.ai)"
+      required:
+        - EVERART_API_KEY
+    isolation_mode: per_user
+    tags: ["images", "ai-art", "generation", "creative"]
+    category: "Creative"
+    version: "1.0.0"
+
+  - name: playwright
+    display_name: "Playwright"
+    description: "Browser automation and testing with Playwright. Navigate pages, interact with elements, take screenshots, and run visual tests."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@anthropic/mcp-server-playwright"]
+    auth_type: none
+    isolation_mode: shared
+    requires_user_credentials: false
+    tags: ["testing", "browser", "automation", "e2e"]
+    category: "Browser & Automation"
+    version: "1.0.0"
+
+  - name: aws-kb-retrieval
+    display_name: "AWS Knowledge Base"
+    description: "Retrieve information from AWS Bedrock Knowledge Bases. Query knowledge bases for RAG-powered responses."
+    transport_type: stdio
+    config:
+      command: ["npx", "-y", "@modelcontextprotocol/server-aws-kb-retrieval"]
+      env:
+        AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID}"
+        AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY}"
+        AWS_REGION: "${AWS_REGION}"
+    auth_type: static
+    requires_user_credentials: true
+    credential_schema:
+      type: object
+      properties:
+        AWS_ACCESS_KEY_ID:
+          type: string
+          title: "AWS Access Key ID"
+          description: "Your AWS Access Key ID"
+        AWS_SECRET_ACCESS_KEY:
+          type: string
+          title: "AWS Secret Access Key"
+          description: "Your AWS Secret Access Key"
+        AWS_REGION:
+          type: string
+          title: "AWS Region"
+          description: "AWS region (e.g., us-west-2)"
+      required:
+        - AWS_ACCESS_KEY_ID
+        - AWS_SECRET_ACCESS_KEY
+        - AWS_REGION
+    isolation_mode: per_user
+    tags: ["aws", "cloud", "knowledge-base", "rag"]
+    category: "Cloud & Infrastructure"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/aws-kb-retrieval"
+    maintainer: "MCP Project"
+    verified: true
+    version: "1.0.0"
+

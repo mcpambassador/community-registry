@@ -1,0 +1,39 @@
+name: Issue Triage
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  triage:
+    name: Auto-triage new issue
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Label by type
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const text = title + ' ' + body;
+            const labels = ['needs-triage'];
+
+            if (text.includes('broken') || text.includes('not working') || text.includes('wrong url') || text.includes('outdated')) {
+              labels.push('registry-issue');
+            }
+            if (text.includes('request') || text.includes('add') || text.includes('missing')) {
+              labels.push('mcp-request');
+            }
+            if (text.includes('security') || text.includes('malicious') || text.includes('suspicious')) {
+              labels.push('security');
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              labels
+            });

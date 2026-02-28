@@ -1,0 +1,55 @@
+name: Request Missing MCP
+description: Request that an MCP server be added to the community registry
+labels: ["mcp-request", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Can't find an MCP in the registry? Request it here.
+
+        **Want it faster?** Open a PR yourself! See [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) for a step-by-step guide.
+
+  - type: input
+    id: mcp-name
+    attributes:
+      label: MCP Server Name
+      description: What is the MCP server called?
+      placeholder: "e.g. Linear, Notion, Stripe MCP"
+    validations:
+      required: true
+
+  - type: input
+    id: repository
+    attributes:
+      label: Repository / Source URL
+      description: Link to the MCP server's GitHub repo or npm package
+      placeholder: "https://github.com/..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport Type
+      description: How does this MCP server communicate?
+      options:
+        - HTTP (URL-based)
+        - stdio (local process / npx)
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why should this be in the registry?
+      description: What does this MCP do? Who would benefit?
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: willing-to-pr
+    attributes:
+      label: Contribute
+      options:
+        - label: I am willing to open a PR to add this entry myself
