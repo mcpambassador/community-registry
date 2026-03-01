@@ -3,7 +3,7 @@ schema_version: "1.0"
 registry:
   name: "MCP Ambassador Community Registry"
   description: "Curated MCP servers for MCP Ambassador"
-  maintainer: "zervin"
+  maintainer: "MCP Ambassador"
   url: "https://github.com/mcpambassador/community-registry"
   updated_at: "2026-02-23T00:00:00Z"
 
@@ -186,7 +186,7 @@ mcps:
     icon_url: "https://brave.com/static-assets/images/brave-logo-sans-text.svg"
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-brave-search"]
+      command: ["npx", "-y", "@brave/brave-search-mcp-server"]
       env:
         BRAVE_API_KEY: "${BRAVE_API_KEY}"
     auth_type: static
@@ -203,10 +203,10 @@ mcps:
     isolation_mode: per_user
     tags: ["search", "web", "privacy"]
     category: "Search & Web"
-    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-brave-search"
+    repository_url: "https://github.com/nicholasgriffintn/brave-search-mcp-server"
     documentation_url: "https://brave.com/search/api/"
-    version: "1.0.0"
-    maintainer: "Anthropic"
+    version: "2.0.75"
+    maintainer: "Brave"
     verified: true
 
   - name: fetch
@@ -214,16 +214,16 @@ mcps:
     description: "Fetch and convert web content to markdown. Retrieve any URL and get clean, readable content for LLM processing."
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-fetch"]
+      command: ["uvx", "mcp-server-fetch"]
     auth_type: none
     isolation_mode: shared
     requires_user_credentials: false
     tags: ["web", "fetch", "markdown", "utility"]
     category: "Utilities"
-    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch"
-    documentation_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch#readme"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch"
+    documentation_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch#readme"
     version: "1.0.0"
-    maintainer: "Anthropic"
+    maintainer: "MCP Project"
     verified: true
 
   - name: puppeteer
@@ -251,16 +251,16 @@ mcps:
     description: "Dynamic, reflective problem-solving through sequential thinking. Break down complex problems into manageable steps with revision and branching."
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-sequential-thinking"]
+      command: ["npx", "-y", "@modelcontextprotocol/server-sequential-thinking"]
     auth_type: none
     isolation_mode: shared
     requires_user_credentials: false
     tags: ["reasoning", "thinking", "problem-solving"]
     category: "AI & Reasoning"
-    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-sequential-thinking"
-    documentation_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-sequential-thinking#readme"
-    version: "1.0.0"
-    maintainer: "Anthropic"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking"
+    documentation_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking#readme"
+    version: "2025.12.18"
+    maintainer: "MCP Project"
     verified: true
 
   - name: exa
@@ -327,7 +327,7 @@ mcps:
     icon_url: "https://a.slack-edge.com/80588/marketing/img/icons/icon_slack_hash_colored.png"
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-slack"]
+      command: ["npx", "-y", "@modelcontextprotocol/server-slack"]
       env:
         SLACK_BOT_TOKEN: "${SLACK_BOT_TOKEN}"
     auth_type: static
@@ -344,23 +344,26 @@ mcps:
     isolation_mode: per_user
     tags: ["messaging", "communication", "collaboration"]
     category: "Communication"
-    repository_url: "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-slack"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/slack"
     documentation_url: "https://api.slack.com/docs"
-    version: "1.0.0"
-    maintainer: "Anthropic"
+    version: "2025.4.25"
+    maintainer: "MCP Project"
     verified: true
 
   - name: mermaid
     display_name: "Mermaid"
     description: "Generate and render Mermaid diagrams. Create flowcharts, sequence diagrams, class diagrams, state diagrams, and more from text descriptions."
-    transport_type: stdio
+    transport_type: http
     config:
-      command: ["npx", "-y", "@mermaidchart/mcp-server"]
+      url: "https://mcp.mermaid.ai/mcp"
     auth_type: none
     isolation_mode: shared
     requires_user_credentials: false
     tags: ["diagrams", "visualization", "flowcharts", "documentation"]
     category: "Visualization"
+    documentation_url: "https://mermaid.ai/docs/ai/mcp-server"
+    maintainer: "Mermaid"
+    verified: true
     version: "1.0.0"
 
   - name: markitdown
@@ -379,43 +382,24 @@ mcps:
     verified: true
     version: "1.0.0"
 
-  - name: unity
-    display_name: "Unity"
-    description: "Interact with the Unity Editor. Create game objects, manage scenes, modify components, and control the Unity Editor remotely."
-    transport_type: stdio
-    config:
-      command: ["npx", "-y", "@anthropic/mcp-server-unity"]
-    auth_type: none
-    isolation_mode: shared
-    requires_user_credentials: false
-    tags: ["game-development", "unity", "3d", "editor"]
-    category: "Game Development"
-    version: "1.0.0"
-
   - name: supabase
     display_name: "Supabase"
     description: "Manage Supabase projects. Query databases, manage auth users, handle storage, and interact with Edge Functions."
-    transport_type: stdio
+    transport_type: http
     config:
-      command: ["npx", "-y", "supabase-mcp-server"]
-      env:
-        SUPABASE_ACCESS_TOKEN: "${SUPABASE_ACCESS_TOKEN}"
-    auth_type: static
-    requires_user_credentials: true
-    credential_schema:
-      type: object
-      properties:
-        SUPABASE_ACCESS_TOKEN:
-          type: string
-          title: "Supabase Access Token"
-          description: "Your Supabase access token (generate at supabase.com/dashboard/account/tokens)"
-      required:
-        - SUPABASE_ACCESS_TOKEN
+      url: "https://mcp.supabase.com/mcp"
+    auth_type: oauth2
+    oauth_config:
+      auth_url: "https://mcp.supabase.com/oauth/authorize"
+      token_url: "https://mcp.supabase.com/oauth/token"
+      scopes: ""
     isolation_mode: per_user
+    requires_user_credentials: false
     tags: ["database", "auth", "backend", "serverless"]
     category: "Database & Backend"
     repository_url: "https://github.com/supabase-community/supabase-mcp"
-    maintainer: "Supabase Community"
+    documentation_url: "https://supabase.com/docs/guides/ai/mcp"
+    maintainer: "Supabase"
     verified: true
     version: "1.0.0"
 
@@ -480,7 +464,7 @@ mcps:
     description: "Manage Monday.com boards, items, and workflows. Create and update items, manage columns, and automate work processes."
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-monday"]
+      command: ["npx", "-y", "@mondaydotcomorg/monday-api-mcp"]
       env:
         MONDAY_API_TOKEN: "${MONDAY_API_TOKEN}"
     auth_type: static
@@ -497,7 +481,10 @@ mcps:
     isolation_mode: per_user
     tags: ["project-management", "productivity", "boards"]
     category: "Productivity"
-    version: "1.0.0"
+    repository_url: "https://github.com/mondaycom/monday-api-mcp"
+    version: "2.0.2"
+    maintainer: "Monday.com"
+    verified: true
 
   - name: figma
     display_name: "Figma"
@@ -550,30 +537,6 @@ mcps:
     documentation_url: "https://developer.todoist.com/rest/v2/"
     version: "1.0.0"
 
-  - name: zapier
-    display_name: "Zapier"
-    description: "Trigger Zapier automations and access connected apps. Execute zaps, manage workflows, and integrate with 6000+ apps through Zapier's platform."
-    transport_type: stdio
-    config:
-      command: ["npx", "-y", "zapier-mcp-server"]
-      env:
-        ZAPIER_API_KEY: "${ZAPIER_API_KEY}"
-    auth_type: static
-    requires_user_credentials: true
-    credential_schema:
-      type: object
-      properties:
-        ZAPIER_API_KEY:
-          type: string
-          title: "Zapier API Key"
-          description: "Your Zapier API key"
-      required:
-        - ZAPIER_API_KEY
-    isolation_mode: per_user
-    tags: ["automation", "integration", "workflows", "no-code"]
-    category: "Automation & Integration"
-    version: "1.0.0"
-
   - name: postgres
     display_name: "PostgreSQL"
     description: "Connect to PostgreSQL databases. Run queries, inspect schemas, manage tables, and explore data with read-only safety by default."
@@ -606,7 +569,7 @@ mcps:
     description: "Query and manage SQLite databases. Run SQL queries, inspect schemas, create tables, and analyze data from local SQLite files."
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@modelcontextprotocol/server-sqlite"]
+      command: ["uvx", "mcp-server-sqlite"]
     auth_type: none
     isolation_mode: shared
     requires_user_credentials: false
@@ -751,7 +714,7 @@ mcps:
     description: "Interact with GitLab repositories, issues, merge requests, and CI/CD pipelines. Manage projects and code reviews."
     transport_type: stdio
     config:
-      command: ["npx", "-y", "@anthropic/mcp-server-gitlab"]
+      command: ["npx", "-y", "@modelcontextprotocol/server-gitlab"]
       env:
         GITLAB_TOKEN: "${GITLAB_TOKEN}"
     auth_type: static
@@ -768,8 +731,11 @@ mcps:
     isolation_mode: per_user
     tags: ["version-control", "ci-cd", "developer-tools"]
     category: "Developer Tools"
+    repository_url: "https://github.com/modelcontextprotocol/servers/tree/main/src/gitlab"
     documentation_url: "https://docs.gitlab.com/"
-    version: "1.0.0"
+    version: "2025.4.25"
+    maintainer: "MCP Project"
+    verified: true
 
   - name: docker
     display_name: "Docker"
@@ -782,30 +748,6 @@ mcps:
     requires_user_credentials: false
     tags: ["containers", "docker", "devops", "infrastructure"]
     category: "DevOps & Monitoring"
-    version: "1.0.0"
-
-  - name: github-models
-    display_name: "GitHub Models"
-    description: "Access AI models through GitHub Models. Run inference with GPT-4, Llama, Mistral, and other models hosted on GitHub."
-    transport_type: stdio
-    config:
-      command: ["npx", "-y", "@anthropic/mcp-server-github-models"]
-      env:
-        GITHUB_TOKEN: "${GITHUB_TOKEN}"
-    auth_type: static
-    requires_user_credentials: true
-    credential_schema:
-      type: object
-      properties:
-        GITHUB_TOKEN:
-          type: string
-          title: "GitHub Token"
-          description: "Your GitHub personal access token (create at github.com/settings/tokens)"
-      required:
-        - GITHUB_TOKEN
-    isolation_mode: per_user
-    tags: ["ai", "inference", "models", "github"]
-    category: "AI & Reasoning"
     version: "1.0.0"
 
   - name: time
