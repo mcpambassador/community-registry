@@ -24,7 +24,7 @@ mcps:
       client_secret_env: "GITHUB_OAUTH_CLIENT_SECRET"
       access_token_env_var: "GITHUB_ACCESS_TOKEN"
     isolation_mode: per_user
-    requires_user_credentials: false
+    requires_user_credentials: true
     tags: ["developer-tools", "version-control", "official"]
     category: "Developer Tools"
     repository_url: "https://github.com/github/github-mcp-server"
