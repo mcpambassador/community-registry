@@ -18,7 +18,7 @@ mcps:
     command:
     - npx
     - -y
-    - airtable-mcp-server@latest
+    - airtable-mcp-server@1.13.0
     env_vars:
     - name: AIRTABLE_API_KEY
       description: Airtable Api Key
@@ -96,7 +96,7 @@ mcps:
     command:
     - npx
     - -y
-    - arxiv-mcp-server@latest
+    - arxiv-mcp-server@0.1.5
     env_vars:
     - name: storage_path
       description: Directory path where downloaded papers will be stored
@@ -138,7 +138,7 @@ mcps:
     command:
     - npx
     - -y
-    - mcp-atlassian@latest
+    - mcp-atlassian@2.1.0
     env_vars:
     - name: CONFLUENCE_API_TOKEN
       description: Confluence Api Token
@@ -205,7 +205,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-aws-kb-retrieval'
+    - '@modelcontextprotocol/server-aws-kb-retrieval@0.6.2'
     env:
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
@@ -252,7 +252,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@brave/brave-search-mcp-server@latest'
+    - '@brave/brave-search-mcp-server@2.0.75'
     env_vars:
     - name: BRAVE_API_KEY
       description: See [Getting an API key](https://github.com/brave/brave-search-mcp-server?tab=readme-ov-file#getting-an-api-key)
@@ -287,7 +287,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@brave/brave-search-mcp-server'
+    - '@brave/brave-search-mcp-server@2.0.75'
     env:
       BRAVE_API_KEY: ${BRAVE_API_KEY}
   auth_type: static
@@ -322,7 +322,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@browserbasehq/mcp-server-browserbase@latest'
+    - '@browserbasehq/mcp-server-browserbase@2.4.3'
   auth_type: static
   requires_user_credentials: true
   isolation_mode: per_user
@@ -344,7 +344,7 @@ mcps:
     command:
     - npx
     - -y
-    - clickhouse-mcp@latest
+    - clickhouse-mcp@0.1.1
     env_vars:
     - name: CLICKHOUSE_PASSWORD
       description: Clickhouse Password
@@ -419,7 +419,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@cloudflare/mcp-server-cloudflare'
+    - '@cloudflare/mcp-server-cloudflare@0.2.0'
     env:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
   auth_type: static
@@ -456,7 +456,7 @@ mcps:
     command:
     - npx
     - -y
-    - mcp-server-cockroachdb@latest
+    - mcp-server-cockroachdb@0.0.1
     env_vars:
     - name: CRDB_PWD
       description: Crdb Pwd
@@ -538,7 +538,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@upstash/context7-mcp@latest'
+    - '@upstash/context7-mcp@2.1.6'
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -710,7 +710,7 @@ mcps:
     command:
     - npx
     - -y
-    - docker-mcp-server
+    - docker-mcp-server@2.1.1
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -731,7 +731,7 @@ mcps:
     command:
     - npx
     - -y
-    - duckduckgo-mcp@latest
+    - duckduckgo-mcp@1.0.1
   auth_type: none
   requires_user_credentials: false
   isolation_mode: shared
@@ -752,7 +752,7 @@ mcps:
     command:
     - npx
     - -y
-    - mcp-server-elasticsearch@latest
+    - mcp-server-elasticsearch@0.2.0
     env_vars:
     - name: ES_API_KEY
       description: Es Api Key
@@ -793,7 +793,7 @@ mcps:
     command:
     - npx
     - -y
-    - mcp-server-elevenlabs@latest
+    - mcp-server-elevenlabs@0.0.1
     env_vars:
     - name: ELEVENLABS_API_KEY
       description: Elevenlabs Api Key
@@ -833,7 +833,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-everart'
+    - '@modelcontextprotocol/server-everart@0.6.2'
     env:
       EVERART_API_KEY: ${EVERART_API_KEY}
   auth_type: static
@@ -865,7 +865,7 @@ mcps:
     command:
     - npx
     - -y
-    - exa-mcp-server
+    - exa-mcp-server@3.2.0
     env:
       EXA_API_KEY: ${EXA_API_KEY}
   auth_type: static
@@ -961,7 +961,7 @@ mcps:
     command:
     - npx
     - -y
-    - figma-mcp-server
+    - figma-mcp-server@2.1.1
     env:
       FIGMA_ACCESS_TOKEN: ${FIGMA_ACCESS_TOKEN}
   auth_type: static
@@ -993,7 +993,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-filesystem'
+    - '@modelcontextprotocol/server-filesystem@2026.1.14'
     - /allowed/path
   auth_type: none
   isolation_mode: shared
@@ -1019,7 +1019,7 @@ mcps:
     command:
     - npx
     - -y
-    - firecrawl-mcp
+    - firecrawl-mcp@3.11.0
     env:
       FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY}
   auth_type: static
@@ -1055,7 +1055,7 @@ mcps:
     command:
     - npx
     - -y
-    - firewalla-mcp-server@latest
+    - firewalla-mcp-server@1.2.2
     env_vars:
     - name: FIREWALLA_MSP_TOKEN
       description: Firewalla Msp Token
@@ -1168,7 +1168,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-gitlab'
+    - '@modelcontextprotocol/server-gitlab@2025.4.25'
     env:
       GITLAB_TOKEN: ${GITLAB_TOKEN}
   auth_type: static
@@ -1248,7 +1248,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-google-maps'
+    - '@modelcontextprotocol/server-google-maps@0.6.2'
     env:
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY}
   auth_type: static
@@ -1357,7 +1357,7 @@ mcps:
     command:
     - npx
     - -y
-    - kubernetes-mcp-server@latest
+    - kubernetes-mcp-server@0.0.60
     env_vars:
     - name: config_path
       description: the path to the host .kube/config
@@ -1413,7 +1413,7 @@ mcps:
     command:
     - npx
     - -y
-    - linear-mcp-server
+    - linear-mcp-server@0.1.0
     env:
       LINEAR_API_KEY: ${LINEAR_API_KEY}
   auth_type: static
@@ -1592,7 +1592,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-memory'
+    - '@modelcontextprotocol/server-memory@2026.1.26'
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -1635,7 +1635,7 @@ mcps:
     command:
     - npx
     - -y
-    - metabase-mcp-server@latest
+    - metabase-mcp-server@1.0.2
     env_vars:
     - name: METABASE_API_KEY
       description: Metabase Api Key
@@ -1686,7 +1686,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@mondaydotcomorg/monday-api-mcp'
+    - '@mondaydotcomorg/monday-api-mcp@3.0.0'
     env:
       MONDAY_API_TOKEN: ${MONDAY_API_TOKEN}
   auth_type: static
@@ -1719,7 +1719,7 @@ mcps:
     command:
     - npx
     - -y
-    - mongodb-mcp-server
+    - mongodb-mcp-server@1.9.0
     env:
       MONGODB_CONNECTION_STRING: ${MONGODB_CONNECTION_STRING}
   auth_type: static
@@ -1755,7 +1755,7 @@ mcps:
     command:
     - npx
     - -y
-    - n8n-mcp@latest
+    - n8n-mcp@2.46.1
     env_vars:
     - name: N8N_API_KEY
       description: N8n Api Key
@@ -1799,7 +1799,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@notionhq/notion-mcp-server'
+    - '@notionhq/notion-mcp-server@2.2.1'
     env:
       OPENAPI_MCP_HEADERS: '{"Authorization": "Bearer ${NOTION_API_KEY}", "Notion-Version":
         "2022-06-28"}'
@@ -1836,7 +1836,7 @@ mcps:
     command:
     - npx
     - -y
-    - openapi-mcp-server@latest
+    - openapi-mcp-server@2.1.0
     env_vars:
     - name: mode
       description: Mode
@@ -1870,7 +1870,7 @@ mcps:
     command:
     - npx
     - -y
-    - openweather-mcp@latest
+    - openweather-mcp@1.0.0
     env_vars:
     - name: OWM_API_KEY
       description: Owm Api Key
@@ -1903,7 +1903,7 @@ mcps:
     command:
     - npx
     - -y
-    - oracle-mcp@latest
+    - oracle-mcp@1.0.1
     env_vars:
     - name: ORACLE_PASSWORD
       description: Oracle Password
@@ -1990,7 +1990,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@playwright/mcp@latest'
+    - '@playwright/mcp@0.0.70'
     - --headless
   auth_type: none
   isolation_mode: shared
@@ -2019,7 +2019,7 @@ mcps:
     command:
     - npx
     - -y
-    - pluggedin-mcp-proxy@latest
+    - pluggedin-mcp-proxy@0.4.8
     env_vars:
     - name: PLUGGEDIN_API_KEY
       description: Pluggedin Api Key
@@ -2064,7 +2064,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-postgres'
+    - '@modelcontextprotocol/server-postgres@0.6.2'
     env:
       POSTGRES_CONNECTION_STRING: ${POSTGRES_CONNECTION_STRING}
   auth_type: static
@@ -2100,7 +2100,7 @@ mcps:
     command:
     - npx
     - -y
-    - postman-mcp-server@latest
+    - postman-mcp-server@1.2.0
     env_vars:
     - name: POSTMAN_API_KEY
       description: Postman Api Key
@@ -2135,7 +2135,7 @@ mcps:
     command:
     - npx
     - -y
-    - prometheus-mcp@latest
+    - prometheus-mcp@1.1.3
     env_vars:
     - name: prometheus_url
       description: The URL of your Prometheus server
@@ -2177,7 +2177,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@pulumi/mcp-server@latest'
+    - '@pulumi/mcp-server@0.2.0'
     env_vars:
     - name: PULUMI_ACCESS_TOKEN
       description: Pulumi Access Token
@@ -2212,7 +2212,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-puppeteer'
+    - '@modelcontextprotocol/server-puppeteer@2025.5.12'
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -2240,7 +2240,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-redis@latest'
+    - '@modelcontextprotocol/server-redis@2025.4.25'
     env_vars:
     - name: REDIS_PWD
       description: Redis Pwd
@@ -2335,7 +2335,7 @@ mcps:
     command:
     - npx
     - -y
-    - ref-tools-mcp@latest
+    - ref-tools-mcp@3.0.3
     env_vars:
     - name: REF_API_KEY
       description: Ref Api Key
@@ -2368,7 +2368,7 @@ mcps:
     command:
     - npx
     - -y
-    - mcp-server-render@latest
+    - mcp-server-render@0.0.1
     env_vars:
     - name: RENDER_API_KEY
       description: Render Api Key
@@ -2402,7 +2402,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@sentry/mcp-server'
+    - '@sentry/mcp-server@0.31.0'
     env:
       SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
   auth_type: static
@@ -2438,7 +2438,7 @@ mcps:
     command:
     - npx
     - -y
-    - sequa-mcp@latest
+    - sequa-mcp@1.0.0
     env_vars:
     - name: API_KEY
       description: Api Key
@@ -2478,7 +2478,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-sequential-thinking'
+    - '@modelcontextprotocol/server-sequential-thinking@2025.12.18'
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -2502,7 +2502,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@modelcontextprotocol/server-slack'
+    - '@modelcontextprotocol/server-slack@2025.4.25'
     env:
       SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN}
   auth_type: static
@@ -2537,7 +2537,7 @@ mcps:
     command:
     - npx
     - -y
-    - sonarqube-mcp-server@latest
+    - sonarqube-mcp-server@1.10.21
     env_vars:
     - name: SONARQUBE_TOKEN
       description: Sonarqube Token
@@ -2644,7 +2644,7 @@ mcps:
     command:
     - npx
     - -y
-    - '@stripe/mcp'
+    - '@stripe/mcp@0.3.3'
     env:
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
   auth_type: static
@@ -2706,7 +2706,7 @@ mcps:
     command:
     - npx
     - -y
-    - tavily-mcp@latest
+    - tavily-mcp@0.2.18
     env_vars:
     - name: TAVILY_API_KEY
       description: Tavily Api Key
@@ -2739,7 +2739,7 @@ mcps:
     command:
     - npx
     - -y
-    - tavily-mcp@latest
+    - tavily-mcp@0.2.18
     env:
       TAVILY_API_KEY: ${TAVILY_API_KEY}
   auth_type: static
@@ -2915,7 +2915,7 @@ mcps:
     command:
     - npx
     - -y
-    - todoist-mcp-server
+    - todoist-mcp-server@1.0.7
     env:
       TODOIST_API_TOKEN: ${TODOIST_API_TOKEN}
   auth_type: static

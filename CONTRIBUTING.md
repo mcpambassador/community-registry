@@ -77,6 +77,40 @@ Add an `oauth_config`:
     client_secret_env: "PROVIDER_OAUTH_CLIENT_SECRET"
 ```
 
+## Version Pinning Requirement
+
+All `stdio` entries that use `npx` **must** pin to a specific package version.
+Unpinned `npx` calls fetch the latest package at runtime, which creates a supply
+chain attack vector — a malicious publisher could push a compromised release and
+every new runtime invocation would silently execute it.
+
+**Required format:**
+
+```yaml
+command:
+  - npx
+  - -y
+  - my-package@1.2.3          # bare package
+  # OR for scoped packages:
+  - '@scope/my-package@1.2.3'
+```
+
+**Do NOT use:**
+
+```yaml
+- my-package            # no version — forbidden
+- my-package@latest     # @latest — forbidden
+- '@scope/pkg@latest'   # @latest — forbidden
+```
+
+If your package is not published to the npm registry (e.g., it uses a private
+registry or a different distribution mechanism), note this clearly in your PR
+and the maintainers will evaluate on a case-by-case basis.
+
+When a new version of your server is released, open a PR to bump the pinned
+version in `registry.yaml`. The CI validation pipeline will reject entries that
+do not include a semver-style or date-style version tag.
+
 ## Guidelines
 
 - **Test before submitting**: Ensure the MCP server is accessible and works
@@ -84,6 +118,7 @@ Add an `oauth_config`:
 - **Proper categorization**: Use existing categories when possible
 - **No secrets**: Never include API keys, tokens, or credentials in entries
 - **Stable URLs**: Only submit MCPs with stable, production endpoints
+- **Pin versions**: All npx-based entries must use `package@x.y.z` — never bare or `@latest`
 
 ## Categories
 
