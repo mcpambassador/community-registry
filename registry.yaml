@@ -1279,6 +1279,7 @@ mcps:
     queries, and manage alerts.
   transport_type: stdio
   config:
+    # NOTE: not published to npm — cannot pin version
     command:
     - npx
     - -y
@@ -1389,6 +1390,7 @@ mcps:
   icon_url: https://avatars.githubusercontent.com/u/10272138?s=200&v=4
   transport_type: stdio
   config:
+    # NOTE: not published to npm — cannot pin version
     command:
     - npx
     - -y
@@ -2889,6 +2891,7 @@ mcps:
     utility for time-related queries.
   transport_type: stdio
   config:
+    # NOTE: not published to npm — cannot pin version
     command:
     - npx
     - -y
