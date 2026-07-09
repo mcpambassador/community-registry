@@ -2,7 +2,7 @@
 
 A curated, community-maintained registry of MCP server configurations for use with MCP Ambassador. Browse, search, and import with one click from the admin dashboard.
 
-![Validation](https://github.com/mcpambassador/community-registry/actions/workflows/validate.yml/badge.svg) ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg) ![MCPs](https://img.shields.io/badge/MCPs-38-brightgreen.svg) [![Website](https://img.shields.io/badge/docs-mcpambassador.ai-blue.svg)](https://mcpambassador.ai)
+![Validation](https://github.com/mcpambassador/community-registry/actions/workflows/validate.yml/badge.svg) ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg) ![MCPs](https://img.shields.io/badge/MCPs-79-brightgreen.svg) [![Website](https://img.shields.io/badge/docs-mcpambassador.ai-blue.svg)](https://mcpambassador.ai)
 
 ## What Is This
 
@@ -69,6 +69,7 @@ This repository contains `registry.yaml`, a machine-readable catalog of pre-vali
 | Name | Description | Transport | Credentials |
 |------|-------------|-----------|-------------|
 | Slack | Slack workspace integration | stdio | API key |
+| Xquik | X data platform for search, extraction, monitoring, and publishing workflows | HTTP | API key |
 
 **Automation and Integration**
 | Name | Description | Transport | Credentials |

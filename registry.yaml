@@ -2528,6 +2528,44 @@ mcps:
   version: 2025.4.25
   maintainer: MCP Project
   verified: true
+- name: xquik
+  display_name: Xquik
+  description: X data platform with REST APIs, MCP tools, webhooks, extraction, monitoring,
+    and publishing workflows.
+  icon_url: https://xquik.com/icons/mcp/xquik.png
+  transport_type: http
+  config:
+    url: https://xquik.com/mcp
+    headers:
+      Authorization: Bearer ${XQUIK_API_KEY}
+    env_vars:
+    - name: XQUIK_API_KEY
+      description: Xquik API key from the dashboard account page
+      required: true
+  auth_type: static
+  requires_user_credentials: true
+  credential_schema:
+    type: object
+    properties:
+      XQUIK_API_KEY:
+        type: string
+        title: Xquik API Key
+        description: API key from https://dashboard.xquik.com/en/account
+    required:
+    - XQUIK_API_KEY
+  isolation_mode: per_user
+  tags:
+  - xquik
+  - social-media
+  - x-twitter
+  - automation
+  - webhooks
+  category: Communication
+  repository_url: https://github.com/Xquik-dev/x-twitter-scraper
+  documentation_url: https://docs.xquik.com/mcp/overview
+  version: 2.4.8
+  maintainer: Xquik
+  verified: false
 - name: sonarqube
   display_name: SonarQube
   description: Interact with SonarQube Cloud, Server and Community build over the
