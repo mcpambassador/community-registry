@@ -2962,7 +2962,7 @@ mcps:
 
 - name: worklittle-jobs
   display_name: "Worklittle Jobs"
-  description: "Search jobs with visa, salary, and distance filters, swipe to apply in your AI app, and save roles to a Worklittle account."
+  description: "Search over 4 million jobs with visa, salary, and distance filters, swipe to apply in your AI app, and save roles to a Worklittle account."
   icon_url: "https://raw.githubusercontent.com/worklittle/jobs-mcp/main/logo.png"
   transport_type: http
   config:
