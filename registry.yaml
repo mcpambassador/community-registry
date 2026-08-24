@@ -2959,3 +2959,27 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+
+- name: worklittle-jobs
+  display_name: "Worklittle Jobs"
+  description: "Search jobs with visa, salary, and distance filters, swipe to apply in your AI app, and save roles to a Worklittle account."
+  icon_url: "https://raw.githubusercontent.com/worklittle/jobs-mcp/main/logo.png"
+  transport_type: http
+  config:
+    url: "https://mcp.worklittle.com/"
+  auth_type: oauth2
+  oauth_config:
+    auth_url: "https://api.worklittle.com/oauth/authorize"
+    token_url: "https://api.worklittle.com/oauth/token"
+    scopes: "jobs:read jobs:apply jobs:apply_with_ai"
+    client_id_env: "WORKLITTLE_OAUTH_CLIENT_ID"
+    client_secret_env: "WORKLITTLE_OAUTH_CLIENT_SECRET"
+  isolation_mode: per_user
+  requires_user_credentials: true
+  tags: ["jobs", "careers", "search", "oauth"]
+  category: "Search & Web"
+  repository_url: "https://github.com/worklittle/jobs-mcp"
+  documentation_url: "https://docs.worklittle.com/mcp"
+  version: "1.0.1"
+  maintainer: "Worklittle"
+  verified: false
