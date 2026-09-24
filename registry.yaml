@@ -6,6 +6,28 @@ registry:
   url: https://github.com/mcpambassador/community-registry
   updated_at: '2026-02-23T00:00:00Z'
 mcps:
+- name: agent-qa
+  display_name: Agent QA
+  description: Self-improving QA agent with MCP tools for test authoring, runs, and result triage. Requires Node.js 24 or newer.
+  transport_type: stdio
+  config:
+    command:
+    - npx
+    - -y
+    - agent-qa@0.1.21
+    - mcp
+  auth_type: none
+  isolation_mode: per_user
+  tags:
+  - testing
+  - qa
+  - automation
+  category: Developer Tools
+  repository_url: https://github.com/vostride/agent-qa
+  documentation_url: https://vostride.com/docs/agent-qa
+  version: 0.1.21
+  maintainer: Vostride
+  verified: false
 - name: airtable-mcp-server
   display_name: Airtable
   description: Provides AI assistants with direct access to Airtable bases, allowing
