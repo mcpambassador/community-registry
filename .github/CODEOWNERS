@@ -1,17 +1,23 @@
 # MCP Ambassador Community Registry — CODEOWNERS
+# Last matching pattern wins; every sensitive path is listed explicitly.
 
-# All registry changes require registry maintainer review
-*                                   @mcpambassador/registry-maintainers
-
-# Schema changes are especially sensitive — any schema update
-# could break existing entries or the validation workflow
-schema/                             @mcpambassador/registry-maintainers @mcpambassador/core-reviewers
+# Everything not matched below
+*                           @zervin
 
 # The registry itself
-registry.yaml                       @mcpambassador/registry-maintainers
+/registry.yaml              @zervin
 
-# CI workflows
-.github/workflows/                  @mcpambassador/devops @mcpambassador/registry-maintainers
+# Schema changes can break existing entries and the validation workflow
+/schema/**                  @zervin
 
-# Contributing guide
-CONTRIBUTING.md                     @mcpambassador/registry-maintainers @mcpambassador/docs-team
+# CI workflows (privileged tokens, branch-protection checks)
+/.github/workflows/**       @zervin
+
+# Policy checker and registry-sync tooling run in CI
+/scripts/**                 @zervin
+/scripts/sync-official/**   @zervin
+/scripts/ci/**              @zervin
+
+# This file, and the contributing guide
+/.github/CODEOWNERS         @zervin
+/CONTRIBUTING.md            @zervin
