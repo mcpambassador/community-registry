@@ -145,3 +145,16 @@ test('credential_schema may not bind an env var that config.env fixes (TD-049)',
   const placeholder = alpaca({ TOKEN: { type: 'string' } }, { TOKEN: '${TOKEN}' });
   assert.deepEqual(universalChecks({ baseMcps: base, headMcps: [placeholder] }), []);
 });
+
+test('locked env names cannot be bound by credential_schema, even without a fixed config.env key', () => {
+  const mk = props => entry({ credential_schema: { type: 'object', properties: props } });
+  assert.deepEqual(universalChecks({ baseMcps: [], headMcps: [mk({ ALPACA_API_KEY: { type: 'string' } })] }), []);
+  for (const props of [
+    { ALPACA_PAPER_TRADE: { type: 'string' } },
+    { alpaca_toolsets: { type: 'string' } },
+    { U: { type: 'string', env_var: 'Data_Api_Url' } },
+  ]) {
+    const errs = universalChecks({ baseMcps: [], headMcps: [mk(props)] });
+    assert.ok(errs.some(e => /locked environment variable/.test(e)), JSON.stringify(props));
+  }
+});

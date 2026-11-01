@@ -92,6 +92,22 @@ export function changedEntries(baseMcps, headMcps) {
  * otherwise it applies to added and changed entries.
  */
 /**
+ * Env names no credential may ever bind: they select live trading, the data endpoint or the tool
+ * surface of the MCP. Extend this list when a catalog entry fixes a safety-relevant variable.
+ */
+export const LOCKED_ENV_NAMES = ['ALPACA_PAPER_TRADE', 'DATA_API_URL', 'ALPACA_TOOLSETS'];
+
+export function lockedEnvBinding(m) {
+  const locked = new Set(LOCKED_ENV_NAMES.map(n => n.toLowerCase()));
+  for (const name of credentialEnvNames(m.credential_schema)) {
+    if (locked.has(String(name).toLowerCase())) {
+      return `credential_schema may not bind the locked environment variable ${String(name).toUpperCase().replace(/[^A-Z0-9_]/g, '?').slice(0, 64)}`;
+    }
+  }
+  return null;
+}
+
+/**
  * TD-049 (CI half): a credential field must not bind an env var that config.env fixes. The server
  * lets the fixed value win, but a catalog that offers the field anyway misleads admins and users.
  * `KEY: ${KEY}` (same-name placeholder) is not a fixed value. Names are compared case-insensitively.
@@ -127,6 +143,8 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
       oauth_access_token_env_var: m.oauth_config?.access_token_env_var,
     });
     if (bad) errors.push(`[${m.name}] ${bad}`);
+    const locked = lockedEnvBinding(m);
+    if (locked) errors.push(`[${m.name}] ${locked}`);
     const clash = fixedEnvCollision(m);
     if (clash) errors.push(`[${m.name}] ${clash}`);
   }
