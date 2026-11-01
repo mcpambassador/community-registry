@@ -7,9 +7,11 @@ export const LIMITS = Object.freeze({
   timeoutMs: 15_000,
   maxBytes: 5 * 1024 * 1024,
   pageSize: 100, // the API rejects larger values (422 observed at 500)
-  // Sized from a live measurement (2026-11-01, version=latest): 545 pages / 54,427 rows; ~3x headroom.
+  // Sized from a live measurement (2026-11-01, version=latest): 545 pages / ~51k deduped rows; ~3x headroom.
   maxPages: 1650,
   maxRawRows: 165_000, // every row the feed returns, kept or dropped
+  maxTotalBytes: 1024 * 1024 * 1024, // cumulative bytes read across the whole walk
+  maxSkippedKept: 100, // skipped rows are counted, but only this many are listed
   budgetMs: 10 * 60_000, // whole-walk wall clock; the workflow job timeout is 15 min
   logEvery: 50,
   maxDepth: 24,
@@ -60,7 +62,7 @@ export async function getJson(url, { fetchImpl = fetch, timeoutMs = LIMITS.timeo
   const text = await readCapped(res, maxBytes);
   const json = JSON.parse(text);
   if (jsonDepth(json) > LIMITS.maxDepth) throw new Error('JSON nested too deeply');
-  return { status: 200, json };
+  return { status: 200, json, bytes: text.length };
 }
 
 const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -89,12 +91,14 @@ export function parsePage(json) {
  */
 export async function fetchAll({
   base = OFFICIAL_BASE, fetchImpl = fetch, maxPages = LIMITS.maxPages, maxRawRows = LIMITS.maxRawRows,
-  budgetMs = LIMITS.budgetMs, logEvery = LIMITS.logEvery, keep = () => undefined, log = console.error, nowImpl = Date.now,
+  budgetMs = LIMITS.budgetMs, maxTotalBytes = LIMITS.maxTotalBytes, logEvery = LIMITS.logEvery, keep = () => undefined, log = console.error, nowImpl = Date.now,
 } = {}) {
   const seenCursors = new Set();
   const seenRows = new Set();
   const rows = [];
   const skipped = [];
+  let skippedCount = 0;
+  let totalBytes = 0;
   const dropped = {};
   const started = nowImpl();
   let rawRows = 0;
@@ -108,12 +112,19 @@ export async function fetchAll({
     try {
       res = await getJson(url, { fetchImpl, timeoutMs: Math.min(LIMITS.timeoutMs, remaining) });
     } catch (e) {
-      if (nowImpl() - started >= budgetMs) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended`);
+      if (nowImpl() - started >= budgetMs) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended (${e.message})`);
       throw e;
     }
-    const { status, json } = res;
+    const { status, json, bytes } = res;
     if (status !== 200) throw new Error('list endpoint returned 404');
+    totalBytes += bytes;
+    if (totalBytes > maxTotalBytes) throw new Error(`total byte cap (${maxTotalBytes}) exceeded`);
     const p = parsePage(json);
+    // Skipped rows still count toward the raw cap, so an all-skipped feed cannot walk forever.
+    rawRows += p.skipped.length;
+    skippedCount += p.skipped.length;
+    for (const sk of p.skipped) if (skipped.length < LIMITS.maxSkippedKept) skipped.push(sk);
+    if (rawRows > maxRawRows) throw new Error(`raw row cap (${maxRawRows}) exceeded`);
     let fresh = 0;
     for (const row of p.rows) {
       const key = `${row.server.name}@${row.server.version}`;
@@ -126,9 +137,8 @@ export async function fetchAll({
       if (why) { dropped[why] = (dropped[why] ?? 0) + 1; continue; }
       rows.push(row);
     }
-    skipped.push(...p.skipped);
     if ((page + 1) % logEvery === 0) log(`fetch progress: ${page + 1} pages, ${rawRows} raw rows, ${rows.length} kept`);
-    if (!p.cursor) return { rows, skipped, pages: page + 1, rawRows, dropped };
+    if (!p.cursor) return { rows, skipped, skippedCount, pages: page + 1, rawRows, dropped };
     if (seenCursors.has(p.cursor)) throw new Error('cursor loop detected');
     if (fresh === 0 && p.skipped.length === 0) throw new Error('page added no new rows (cursor loop)');
     seenCursors.add(p.cursor);

@@ -5,7 +5,7 @@ const MAX = 60000; // GitHub limit is 65536 characters
 
 const NOISE = new Set(['not-latest', 'already-synced', 'unsupported-type', 'status-not-active']);
 
-export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun }) {
+export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun, dropped = {} }) {
   const L = [];
   L.push(`## Official registry sync ${date}${dryRun ? ' (DRY RUN, no PR is opened)' : ''}`, '');
   L.push('Candidates from the official MCP Registry, mapped to our schema. **Review every row.** Namespace verification proves who published, not that the code is safe. Nothing here is `verified`; entries are additions only.', '');
@@ -34,6 +34,7 @@ export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun 
   }
   const byReason = new Map();
   for (const r of rejected) byReason.set(r.reason, (byReason.get(r.reason) ?? 0) + 1);
+  for (const [reason, n] of Object.entries(dropped)) byReason.set(reason, (byReason.get(reason) ?? 0) + n);
   L.push('### Rejected (counts by reason)', '');
   for (const [reason, n] of [...byReason].sort()) L.push(`- ${code(reason, 60)}: ${n}`);
   const interesting = rejected.filter(r => !NOISE.has(r.reason)).slice(0, 60);
@@ -42,7 +43,9 @@ export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun 
     for (const r of interesting) L.push(`| ${code(r.name, 80)} | ${code(r.reason, 60)} | ${code(r.detail ?? '', 80)} |`);
     L.push('', '</details>');
   }
-  if (skipped.length) L.push('', `Skipped ${skipped.length} row(s) with an unknown \`$schema\` or malformed shape.`);
+  const skippedN = stats.skipped ?? skipped.length;
+  if (skippedN) L.push('', `Skipped ${skippedN} row(s) with an unknown \`$schema\` or malformed shape.`);
+  L.push('', 'To permanently decline a candidate, add it to the denylist; closing this PR does not.');
   L.push('', '---', 'Install-time code execution (postinstall, setup.py) on the Ambassador host is a residual risk accepted for v1; CI never installs candidates. Tool-definition pinning (ADR-021) and approvals (ADR-023) are the runtime controls.');
   const body = L.join('\n');
   return body.length > MAX ? body.slice(0, MAX) + '\n\n_(truncated)_' : body;
