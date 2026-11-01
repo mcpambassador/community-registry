@@ -29,11 +29,11 @@ for (const f of files) {
   });
 }
 
-test('sync-official-registry: two-job split, dry_run default, no schedule, privileged job runs no npm', () => {
+test('sync-official-registry: two-job split, dry_run default, weekly schedule that is always a dry run, privileged job runs no npm', () => {
   const wf = yaml.load(fs.readFileSync(path.join(dir, 'sync-official-registry.yml'), 'utf8'));
   const on = wf.on ?? wf[true];
   assert.equal(on.workflow_dispatch.inputs.dry_run.default, true, 'dry_run must default to true');
-  assert.ok(!('schedule' in on), 'no active schedule until a reviewed dry run (ADR-024 §7)');
+  assert.deepEqual(on.schedule, [{ cron: '17 6 * * 1' }], 'weekly Monday schedule (ADR-024 §7)');
   assert.deepEqual(wf.permissions, {}, 'top-level permissions must be empty');
   const { prepare, ['open-pr']: open } = wf.jobs;
   assert.deepEqual(prepare.permissions, { contents: 'read' });
@@ -41,6 +41,13 @@ test('sync-official-registry: two-job split, dry_run default, no schedule, privi
   assert.deepEqual(open.permissions, { contents: 'read' });
   assert.match(prepare.if, /refs\/heads\/main/);
   assert.match(open.if, /dry_run == false/);
+  assert.match(open.if, /github\.event_name == 'workflow_dispatch'/, 'a scheduled run (inputs.dry_run null == false) must never reach the privileged job');
+  const build = prepare.steps.find(s => s.id === 'sync');
+  assert.match(build.run, /\[ "\$EVENT_NAME" = "schedule" \] \|\| \[ "\$DRY_RUN" = "true" \]; then flags="--dry-run"/, 'schedule forces --dry-run');
+  assert.match(build.run, /EVENT_NAME" = "schedule" \] && \[ "\$\(\(10#\$\(date -u \+%d\)\)\)" -le 7 \]; then flags="\$flags --full-scan"/, 'first-Monday full scan');
+  assert.equal(build.env.EVENT_NAME, '${{ github.event_name }}');
+  assert.equal(build.env.GITHUB_TOKEN, '${{ github.token }}');
+  for (const [n, j] of Object.entries(wf.jobs)) for (const st of j.steps) if (st !== build) assert.ok(!st.env || !('GITHUB_TOKEN' in st.env), `${n}: the token reaches only the sync step`);
   for (const s of open.steps) {
     assert.ok(!/setup-node/.test(s.uses ?? ''), 'open-pr must not set up node tooling');
     assert.ok(!/\b(npm|npx|pnpm|yarn)\b/.test(s.run ?? ''), 'open-pr must not run npm');

@@ -26,9 +26,12 @@ on:
         description: Ignore the updated_since watermark and walk the whole feed
         type: boolean
         default: false
-  # The weekly schedule is enabled only after one reviewed dry run (ADR-024 §7). A test pins this.
-  # schedule:
-  #   - cron: '17 6 * * 1'
+  # Weekly health check (ADR-024 §7, enabled after the reviewed dry run). Scheduled runs are ALWAYS dry runs: the
+  # build step forces --dry-run and open-pr only runs for workflow_dispatch, so the privileged job and its
+  # environment can never run from the schedule. The first Monday of each month (day 1-7) also walks the whole
+  # feed (FB-035), to revisit rows the per-publisher cap deferred. A test pins all of this.
+  schedule:
+    - cron: '17 6 * * 1'
 
 permissions: {}
 
@@ -63,12 +66,18 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
           MAX_PER_PUBLISHER: ${{ inputs.max_per_publisher }}
           FULL_SCAN: ${{ inputs.full_scan }}
+          EVENT_NAME: ${{ github.event_name }}
+          # Read-only repo metadata for the quality signal (FB-036); reaches this step only, never logged.
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           case "${MAX_PER_PUBLISHER:-2}" in [1-9]|[1-4][0-9]|50) ;; *) echo "max_per_publisher must be 1-50"; exit 1 ;; esac
           case "${FULL_SCAN:-false}" in true|false) ;; *) echo "full_scan must be true or false"; exit 1 ;; esac
           flags=""
-          if [ "$DRY_RUN" = "true" ]; then flags="--dry-run"; fi
+          # Scheduled runs are always dry runs, whatever the (empty) inputs say.
+          if [ "$EVENT_NAME" = "schedule" ] || [ "$DRY_RUN" = "true" ]; then flags="--dry-run"; fi
           if [ "$FULL_SCAN" = "true" ]; then flags="$flags --full-scan"; fi
+          # Monthly full scan (FB-035): the schedule fires on Mondays, so day-of-month 1-7 is the first Monday.
+          if [ "$EVENT_NAME" = "schedule" ] && [ "$((10#$(date -u +%d)))" -le 7 ]; then flags="$flags --full-scan"; fi
           node scripts/sync-official/sync.mjs --out sync-out --max "${MAX_CANDIDATES:-10}" --max-per-publisher "${MAX_PER_PUBLISHER:-2}" $flags
       - name: Pre-flight policy checks (same script the PR check runs)
         env:
@@ -93,7 +102,8 @@ jobs:
   open-pr:
     name: Open the review PR (privileged, no third-party code)
     needs: prepare
-    if: needs.prepare.outputs.has_changes == 'true' && inputs.dry_run == false
+    # Manual dispatch only: on a schedule `inputs.dry_run` is null, which compares equal to false in expressions.
+    if: github.event_name == 'workflow_dispatch' && needs.prepare.outputs.has_changes == 'true' && inputs.dry_run == false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: registry-sync

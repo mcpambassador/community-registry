@@ -1,3 +1,7 @@
+# Labels registry PRs by category / transport / auth. TD-056: the previous inline github-script step failed on every PR
+# (`require.resolve is not a function`); the logic now lives in scripts/ci/label-category.mjs.
+# SECURITY: trigger is `pull_request` (never pull_request_target). The script and node_modules come from the BASE sha;
+# the PR's registry.yaml is checked out to head/ and parsed as data only (js-yaml safe load). No PR code is executed.
 name: Auto-Label by Category
 
 on:
@@ -20,99 +24,25 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: head
           persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
 
-      - name: Install dependencies (lockfile, no install scripts)
-        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Install base dependencies (lockfile, no install scripts)
+        run: cd base && npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Detect additions and label
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
-        with:
-          script: |
-            const { execSync } = require('child_process');
-            const yaml = require(require.resolve('js-yaml', { paths: [process.cwd()] }));
-            const fs = require('fs');
-
-            // Category → label mapping
-            const CATEGORY_LABELS = {
-              'Developer Tools':        'category: developer-tools',
-              'Productivity':           'category: productivity',
-              'Data & Analytics':       'category: data-analytics',
-              'Communication':          'category: communication',
-              'AI & ML':                'category: ai-ml',
-              'Security':               'category: security',
-              'Infrastructure':         'category: infrastructure',
-              'Finance':                'category: finance',
-              'Media & Entertainment':  'category: media',
-              'Education':              'category: education',
-              'E-commerce':             'category: ecommerce',
-              'Other':                  'category: other'
-            };
-
-            const transport_labels = {
-              'http': 'transport: http',
-              'stdio': 'transport: stdio'
-            };
-
-            const auth_labels = {
-              'none': 'auth: none',
-              'static': 'auth: static',
-              'oauth2': 'auth: oauth2'
-            };
-
-            try {
-              const registry = yaml.load(fs.readFileSync('registry.yaml', 'utf8'));
-              const labelsToAdd = new Set(['registry-pr']);
-
-              for (const mcp of registry.mcps || []) {
-                if (mcp.category && CATEGORY_LABELS[mcp.category]) {
-                  labelsToAdd.add(CATEGORY_LABELS[mcp.category]);
-                }
-                if (mcp.transport_type && transport_labels[mcp.transport_type]) {
-                  labelsToAdd.add(transport_labels[mcp.transport_type]);
-                }
-                if (mcp.auth_type && auth_labels[mcp.auth_type]) {
-                  labelsToAdd.add(auth_labels[mcp.auth_type]);
-                }
-                if (mcp.verified) {
-                  labelsToAdd.add('verified-entry');
-                }
-              }
-
-              // Ensure labels exist before adding (create if needed)
-              for (const label of labelsToAdd) {
-                try {
-                  await github.rest.issues.getLabel({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    name: label
-                  });
-                } catch (e) {
-                  if (e.status === 404) {
-                    const color = label.startsWith('category:') ? '0075ca' :
-                                  label.startsWith('transport:') ? 'e4e669' :
-                                  label.startsWith('auth:') ? 'd93f0b' : 'cfd3d7';
-                    await github.rest.issues.createLabel({
-                      owner: context.repo.owner,
-                      repo: context.repo.repo,
-                      name: label,
-                      color
-                    }).catch(() => {});
-                  }
-                }
-              }
-
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                labels: Array.from(labelsToAdd)
-              });
-
-            } catch (e) {
-              console.log('Could not parse registry.yaml for labels:', e.message);
-            }
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node base/scripts/ci/label-category.mjs head/registry.yaml
