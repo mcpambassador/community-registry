@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import yaml from '../lib/yaml.mjs';
 import { packageArg, pinProblem } from '../lib/checks.mjs';
 import { fetchAll } from './fetch-official.mjs';
-import { evaluate, cheapDrop, publisherTier, OFFICIAL_META_KEY } from './eligibility.mjs';
+import { evaluate, cheapDrop, publisherTier, publisherKey, OFFICIAL_META_KEY } from './eligibility.mjs';
 import { lookupCandidate } from './index-lookup.mjs';
 import { buildEntry } from './map.mjs';
 import { renderPrBody } from './pr-body.mjs';
@@ -73,7 +73,7 @@ export async function runSync({
   const nowMs = Date.parse(now);
   // Newest first by the registry's own timestamp, so the per-run cap takes fresh entries; name then version break ties.
   const sorted = [...rows].sort((a, b) => stampOf(b, nowMs) - stampOf(a, nowMs) || cmp(a.server.name, b.server.name) || cmp(a.server.version, b.server.version));
-  // Pass 1 (network-free): evaluate everything, rank verified-namespace candidates ahead of the rest; newest-first holds within a tier.
+  // Pass 1 (network-free): evaluate everything, rank github-or-host-matched candidates ahead of the rest; newest-first holds within a tier.
   const queue = [];
   for (const row of sorted) {
     const v = evaluate(row, ctx);
@@ -93,7 +93,7 @@ export async function runSync({
     // Re-evaluate: slugs taken by entries accepted earlier in this run change the outcome.
     const v = evaluate(row, ctx);
     if (!v.ok) { rejected.push({ name, reason: v.reason, detail: v.detail }); continue; }
-    const ns = v.plan.parsed.ns;
+    const ns = publisherKey(v.plan.parsed);
     if ((perPublisher.get(ns) ?? 0) >= maxPerPublisher) { cappedByPublisher++; deferred++; continue; }
     if (nowImpl() - lookupStart > lookupBudgetMs) throw new Error(`lookup time budget (${Math.round(lookupBudgetMs / 1000)}s) exhausted after ${lookups} lookups`);
     lookups++;
@@ -151,7 +151,7 @@ async function main() {
   const skippedN = feed.skippedCount ?? feed.skipped?.length ?? 0;
   const cheapN = Object.values(feed.dropped ?? {}).reduce((a, b) => a + b, 0);
   console.error(`funnel: ${feed.rawRows ?? feed.rows.length} raw rows − ${skippedN} skipped (unknown $schema/malformed) − ${cheapN} cheap-dropped = ${feed.rows.length} kept → ${res.eligible} eligible candidates (before --max ${max}) → ${res.accepted.length} proposed; ${res.lookups} lookups`);
-  console.error(`tiers: eligible ${res.scope.tierCounts[1]} verified-namespace / ${res.scope.tierCounts[2]} other; proposed ${res.scope.acceptedTiers[1]} / ${res.scope.acceptedTiers[2]}; ${res.scope.publishers} publishers, cap ${maxPerPublisher} each held back ${res.scope.cappedByPublisher}`);
+  console.error(`tiers: eligible ${res.scope.tierCounts[1]} github-or-host-matched / ${res.scope.tierCounts[2]} other; proposed ${res.scope.acceptedTiers[1]} / ${res.scope.acceptedTiers[2]}; ${res.scope.publishers} publishers, cap ${maxPerPublisher} each held back ${res.scope.cappedByPublisher}`);
   console.error(`cheap-dropped by reason: ${JSON.stringify(sortDesc(feed.dropped ?? {}))}`);
   console.error(`rejected by reason: ${JSON.stringify(sortDesc(byReason))}`);
   console.error(`heapUsed: ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`);

@@ -1,4 +1,4 @@
-// FB-034: verified-first ranking, per-publisher cap, updated_since watermark.
+// FB-034: github-or-host-matched-first ranking, per-publisher cap, updated_since watermark.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -37,7 +37,7 @@ test('tier 1 host match is exact or dot-suffix, case- and port-insensitive; look
   assert.equal(tier('https://notexample.com/mcp'), 2);
 });
 
-test('ranking: verified tier first, newest-first inside each tier, even when --max cuts the list', async () => {
+test('ranking: tier 1 (github-or-host-matched) first, newest-first inside each tier, even when --max cuts the list', async () => {
   const rows = [
     npmRow('com.zzz/newest-unverified', { updatedAt: '2026-11-07T00:00:00Z' }),
     npmRow('io.github.old/verified-old', { updatedAt: '2026-09-01T00:00:00Z' }),
@@ -64,6 +64,14 @@ test('per-publisher cap: at most N per namespace, others fill the slots; default
   assert.deepEqual(names(one), ['io.github.big/t4', 'io.github.small/one']);
 });
 
+test('cap key: GitHub owners compare case-insensitively; com.acme and com.acme.mcp share one cap', async () => {
+  const gh = await sync([npmRow('io.github.Big/a'), npmRow('io.github.big/b'), npmRow('io.github.BIG/c')], { max: 10, maxPerPublisher: 1 });
+  assert.equal(gh.accepted.length, 1);
+  const dom = await sync([remoteRow('com.acme/a', 'https://acme.com/mcp'), remoteRow('com.acme.mcp/b', 'https://mcp.acme.com/mcp'), npmRow('com.other/c')], { max: 10, maxPerPublisher: 1 });
+  assert.equal(dom.accepted.length, 2);
+  assert.equal(dom.scope.cappedByPublisher, 1);
+});
+
 test('per-publisher cap counts accepted entries only: a lookup rejection does not use a slot', async () => {
   const rows = [1, 2, 3].map(i => npmRow(`io.github.big/t${i}`, { updatedAt: `2026-11-0${i}T00:00:00Z` }));
   const lookup = async (plan, now) => (plan.officialName.endsWith('t3') ? { ok: false, reason: 'package-not-found' } : okLookup(plan, now));
@@ -74,7 +82,7 @@ test('per-publisher cap counts accepted entries only: a lookup rejection does no
 test('PR body shows the scope line', async () => {
   const res = await sync([npmRow('io.github.a/x'), npmRow('com.b/y')], { watermark: '2026-11-01T00:00:00Z' });
   assert.match(res.body, /incremental scan, updated since `2026-11-01T00:00:00Z`/);
-  assert.match(res.body, /1 verified-namespace, 1 other/);
+  assert.match(res.body, /1 github-or-host-matched, 1 other/);
   assert.match((await sync([npmRow('io.github.a/x')])).body, /full scan/);
 });
 

@@ -231,3 +231,13 @@ export function publisherTier(plan) {
   if (plan.parsed.kind === 'github') return 1;
   return plan.kind === 'remote' && !plan.flags.has('host-mismatch') ? 1 : 2;
 }
+
+/**
+ * Per-publisher cap key (FB-034): lowercased `io.github.<owner>` for GitHub namespaces; for domain namespaces the first two
+ * labels of the reverse-DNS name (com.acme.mcp → com.acme). No public-suffix list, so co.uk-style suffixes (uk.co.acme)
+ * collapse to the suffix (uk.co) and over-share one cap; that errs on the strict side.
+ */
+export function publisherKey(parsed) {
+  const ns = parsed.ns.toLowerCase();
+  return parsed.kind === 'github' ? ns : ns.split('.').slice(0, 2).join('.');
+}
