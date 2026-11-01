@@ -1,6 +1,8 @@
 // Pure registry checks shared by CI (scripts/ci/check.mjs) and the official-registry sync.
 // No I/O and no network in this file. ADR-024.
 
+import { checkCatalogEntry } from '../vendor/runner-guard.mjs';
+
 export const SYNC_BRANCH_PREFIX = 'sync/official-';
 
 /** Characters never allowed in free text: C0/C1 controls (except \n \t in description), zero-width, bidi. */
@@ -96,6 +98,13 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
   for (const m of pinScope) {
     const why = pinProblem(m.config?.command);
     if (why) errors.push(`[${m.name}] ${why}`);
+    // Runner guard (TD-039 / TD-043): same rule the server applies at install and spawn.
+    const bad = checkCatalogEntry({
+      config: m.config,
+      credential_schema: m.credential_schema,
+      oauth_access_token_env_var: m.oauth_config?.access_token_env_var,
+    });
+    if (bad) errors.push(`[${m.name}] ${bad}`);
   }
   for (const m of added) {
     if (m.verified === true) errors.push(`[${m.name}] a new entry cannot be added with verified: true`);
