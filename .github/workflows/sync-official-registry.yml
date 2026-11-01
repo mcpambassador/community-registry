@@ -64,6 +64,8 @@ jobs:
           MAX_PER_PUBLISHER: ${{ inputs.max_per_publisher }}
           FULL_SCAN: ${{ inputs.full_scan }}
         run: |
+          case "${MAX_PER_PUBLISHER:-2}" in [1-9]|[1-4][0-9]|50) ;; *) echo "max_per_publisher must be 1-50"; exit 1 ;; esac
+          case "${FULL_SCAN:-false}" in true|false) ;; *) echo "full_scan must be true or false"; exit 1 ;; esac
           flags=""
           if [ "$DRY_RUN" = "true" ]; then flags="--dry-run"; fi
           if [ "$FULL_SCAN" = "true" ]; then flags="$flags --full-scan"; fi

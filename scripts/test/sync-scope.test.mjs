@@ -28,6 +28,15 @@ test('publisherTier: github and host-matched remotes are tier 1; mismatch, packa
   assert.equal(tier(npmRow('com.acme/c')), 2);
 });
 
+test('tier 1 host match is exact or dot-suffix, case- and port-insensitive; lookalikes are tier 2', () => {
+  const tier = url => publisherTier(evaluate(remoteRow('com.example/a', url), ctx).plan);
+  assert.equal(tier('https://example.com/mcp'), 1);
+  assert.equal(tier('https://API.Example.COM:8443/mcp'), 1);
+  assert.equal(tier('https://evil-example.com/mcp'), 2);
+  assert.equal(tier('https://example.com.evil.net/mcp'), 2);
+  assert.equal(tier('https://notexample.com/mcp'), 2);
+});
+
 test('ranking: verified tier first, newest-first inside each tier, even when --max cuts the list', async () => {
   const rows = [
     npmRow('com.zzz/newest-unverified', { updatedAt: '2026-11-07T00:00:00Z' }),
