@@ -19,6 +19,11 @@ export const LIMITS = Object.freeze({
 
 /** Read a response body through a size cap; aborts (throws) beyond `max` bytes. */
 export async function readCapped(res, max = LIMITS.maxBytes) {
+  return (await readBody(res, max)).text;
+}
+
+/** Same as readCapped, but also reports the real number of bytes read (for the cumulative cap). */
+export async function readBody(res, max = LIMITS.maxBytes) {
   const len = Number(res.headers?.get?.('content-length'));
   if (Number.isFinite(len) && len > max) throw new Error('response too large');
   const chunks = [];
@@ -36,8 +41,9 @@ export async function readCapped(res, max = LIMITS.maxBytes) {
     const buf = new Uint8Array(await res.arrayBuffer());
     if (buf.byteLength > max) throw new Error('response too large');
     chunks.push(buf);
+    total = buf.byteLength;
   }
-  return Buffer.concat(chunks.map(c => Buffer.from(c))).toString('utf8');
+  return { text: Buffer.concat(chunks.map(c => Buffer.from(c))).toString('utf8'), bytes: total };
 }
 
 /** Max nesting depth of a parsed JSON value (iterative, so a hostile document cannot blow the stack). */
@@ -59,10 +65,10 @@ export async function getJson(url, { fetchImpl = fetch, timeoutMs = LIMITS.timeo
   const res = await fetchImpl(url, { signal: AbortSignal.timeout(timeoutMs), headers: { accept: 'application/json' }, redirect: 'error' });
   if (res.status === 404) return { status: 404 };
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${new URL(url).host}`);
-  const text = await readCapped(res, maxBytes);
+  const { text, bytes } = await readBody(res, maxBytes);
   const json = JSON.parse(text);
   if (jsonDepth(json) > LIMITS.maxDepth) throw new Error('JSON nested too deeply');
-  return { status: 200, json, bytes: text.length };
+  return { status: 200, json, bytes };
 }
 
 const isObj = v => v !== null && typeof v === 'object' && !Array.isArray(v);

@@ -106,3 +106,21 @@ test('an endless all-skipped feed hits the raw cap cleanly; skipped is counted b
 test('time-budget error carries the underlying cause', async () => {
   await assert.rejects(fetchAll({ budgetMs: 100, nowImpl: (() => { let t = 0; return () => (t += 60); })(), fetchImpl: async () => { throw new Error('socket hang up'); } }), /time budget \(0\.1s|time budget \(\d+s\).*socket hang up|socket hang up/);
 });
+
+test('ordering: a future-dated row (more than a day ahead) does not sort first', async () => {
+  const rows = [
+    npmRow('io.github.acme/future', { updatedAt: '2099-01-01T00:00:00Z' }),
+    npmRow('io.github.acme/recent', { updatedAt: '2026-11-07T00:00:00Z' }),
+    npmRow('io.github.acme/soon', { updatedAt: '2026-11-08T12:00:00Z' }), // within one day of NOW: still honoured
+  ];
+  const res = await sync(rows, { max: 10 });
+  assert.deepEqual(res.accepted.map(a => a.plan.officialName), ['io.github.acme/soon', 'io.github.acme/recent', 'io.github.acme/future']);
+});
+
+test('byte counting uses real bytes, not string length (multibyte text)', async () => {
+  const body = JSON.stringify({ servers: [], metadata: { nextCursor: '', note: 'é'.repeat(100) } });
+  const { getJson } = await import('../sync-official/fetch-official.mjs');
+  const r = await getJson('https://x.test/', { fetchImpl: async () => new Response(body) });
+  assert.equal(r.bytes, Buffer.byteLength(body));
+  assert.ok(r.bytes > body.length);
+});
