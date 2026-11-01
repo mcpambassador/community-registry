@@ -179,7 +179,7 @@ jobs:
           git fetch --no-tags --depth=1 origin "$BASE_REF"
           git show FETCH_HEAD:registry.yaml > "$RUNNER_TEMP/base-registry.yaml"
           git diff --name-only FETCH_HEAD HEAD > "$RUNNER_TEMP/changed-files.txt"
-          node scripts/ci/check.mjs --base "$RUNNER_TEMP/base-registry.yaml" --head registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt"
+          node scripts/ci/check.mjs --base "$RUNNER_TEMP/base-registry.yaml" --head registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
 
       - name: Workflow and tooling tests
         run: npm test
