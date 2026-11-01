@@ -225,3 +225,9 @@ export function evaluate(row, ctx) {
   flags.add('remote-auth-unverified');
   return { ok: true, plan: { ...base, kind: 'remote', url: url.href, version: PLAIN_VERSION.test(s.version) ? s.version : '1.0.0', argv: [], env: [] } };
 }
+
+/** Review-priority tier (FB-034): 1 = namespace ownership is provable (io.github.* or a remote whose host matches the reverse-DNS domain), 2 = the rest. */
+export function publisherTier(plan) {
+  if (plan.parsed.kind === 'github') return 1;
+  return plan.kind === 'remote' && !plan.flags.has('host-mismatch') ? 1 : 2;
+}

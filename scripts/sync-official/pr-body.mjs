@@ -5,11 +5,12 @@ const MAX = 60000; // GitHub limit is 65536 characters
 
 const NOISE = new Set(['not-latest', 'already-synced', 'unsupported-type', 'status-not-active']);
 
-export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun, dropped = {} }) {
+export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun, dropped = {}, scope, watermark }) {
   const L = [];
   L.push(`## Official registry sync ${date}${dryRun ? ' (DRY RUN, no PR is opened)' : ''}`, '');
   L.push('Candidates from the official MCP Registry, mapped to our schema. **Review every row.** Namespace verification proves who published, not that the code is safe. Nothing here is `verified`; entries are additions only.', '');
-  L.push(`Fetched ${stats.rows} rows over ${stats.pages} page(s); ${accepted.length} proposed, ${stats.rejected} rejected, ${stats.deferred} deferred by the per-run cap.`, '');
+  L.push(`Fetched ${stats.rows} rows over ${stats.pages} page(s); ${accepted.length} proposed, ${stats.rejected} rejected, ${stats.deferred} deferred by the per-run caps.`, '');
+  if (scope) L.push(`Scope: ${watermark ? `incremental scan, updated since ${code(watermark)}` : 'full scan'}; eligible candidates by tier: ${scope.tierCounts[1]} verified-namespace, ${scope.tierCounts[2]} other; proposed: ${scope.acceptedTiers[1]} verified, ${scope.acceptedTiers[2]} other, from ${scope.publishers} publisher(s) (at most ${scope.maxPerPublisher} each; ${scope.cappedByPublisher} held back by that cap).`, '');
   if (accepted.length) {
     L.push('### Proposed additions', '');
     for (const a of accepted) {

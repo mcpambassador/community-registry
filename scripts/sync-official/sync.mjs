@@ -3,14 +3,14 @@
 // Never writes registry.yaml in place and never touches git. ADR-024.
 //
 //   node scripts/sync-official/sync.mjs --out sync-out [--registry registry.yaml] [--max 10]
-//        [--now 2026-11-08T00:00:00Z] [--rows-file fixture.json]   (--rows-file replaces the network fetch; tests/dry runs)
+//        [--max-per-publisher 2] [--full-scan] [--now 2026-11-08T00:00:00Z] [--rows-file fixture.json]   (--rows-file replaces the network fetch; tests/dry runs)
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import yaml from '../lib/yaml.mjs';
 import { packageArg, pinProblem } from '../lib/checks.mjs';
 import { fetchAll } from './fetch-official.mjs';
-import { evaluate, cheapDrop, OFFICIAL_META_KEY } from './eligibility.mjs';
+import { evaluate, cheapDrop, publisherTier, OFFICIAL_META_KEY } from './eligibility.mjs';
 import { lookupCandidate } from './index-lookup.mjs';
 import { buildEntry } from './map.mjs';
 import { renderPrBody } from './pr-body.mjs';
@@ -26,6 +26,18 @@ const stampOf = (row, nowMs) => {
   // Missing, unparseable or future-dated (> 1 day ahead of the clock) timestamps sort last, so a bad row cannot jump the queue.
   return Number.isFinite(t) && t <= nowMs + 86_400_000 ? t : 0;
 };
+
+const OVERLAP_MS = 86_400_000;
+/** Incremental-scan watermark (FB-034): newest `synced_at` of an official-registry entry minus a 1-day overlap, or undefined (→ full scan). */
+export function deriveWatermark(registryText, nowMs = Date.now()) {
+  let best = 0;
+  for (const m of yaml.load(registryText)?.mcps ?? []) {
+    if (m.source !== 'official-registry') continue;
+    const t = Date.parse(m.synced_at ?? '');
+    if (Number.isFinite(t) && t <= nowMs && t > best) best = t;
+  }
+  return best ? new Date(best - OVERLAP_MS).toISOString().replace(/\.\d+Z$/, 'Z') : undefined;
+}
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
 /** One place that builds the eligibility context, so the fetcher's early filter and runSync cannot drift apart. */
@@ -46,8 +58,8 @@ export function buildContext({ registryText, deny, top }) {
 
 /** Pure-ish core: injectable rows source, lookups and validator. Returns the artifact contents. */
 export async function runSync({
-  registryText, rows, rawRows, skipped = [], skippedCount, dropped = {}, pages = 1, max = 10, now, lookup = lookupCandidate, validate, deny, top,
-  dryRun = true, maxLookups = max * 5, lookupBudgetMs = 4 * 60_000, nowImpl = Date.now,
+  registryText, rows, rawRows, skipped = [], skippedCount, dropped = {}, pages = 1, max = 10, maxPerPublisher = 2, now, lookup = lookupCandidate, validate, deny, top,
+  dryRun = true, watermark, maxLookups = max * 5, lookupBudgetMs = 4 * 60_000, nowImpl = Date.now,
 }) {
   const ctx = buildContext({ registryText, deny, top });
   const { takenSlugs } = ctx;
@@ -61,12 +73,28 @@ export async function runSync({
   const nowMs = Date.parse(now);
   // Newest first by the registry's own timestamp, so the per-run cap takes fresh entries; name then version break ties.
   const sorted = [...rows].sort((a, b) => stampOf(b, nowMs) - stampOf(a, nowMs) || cmp(a.server.name, b.server.name) || cmp(a.server.version, b.server.version));
+  // Pass 1 (network-free): evaluate everything, rank verified-namespace candidates ahead of the rest; newest-first holds within a tier.
+  const queue = [];
   for (const row of sorted) {
+    const v = evaluate(row, ctx);
+    if (!v.ok) { rejected.push({ name: row.server.name, reason: v.reason, detail: v.detail }); continue; }
+    eligible++;
+    queue.push({ row, tier: publisherTier(v.plan) });
+  }
+  const tierCounts = { 1: 0, 2: 0 };
+  for (const q of queue) tierCounts[q.tier]++;
+  queue.sort((a, b) => a.tier - b.tier); // stable: keeps the newest-first order inside each tier
+  const perPublisher = new Map();
+  const acceptedTiers = { 1: 0, 2: 0 };
+  let cappedByPublisher = 0;
+  for (const { row, tier } of queue) {
     const name = row.server.name;
+    if (accepted.length >= max || lookups >= maxLookups) { deferred++; continue; }
+    // Re-evaluate: slugs taken by entries accepted earlier in this run change the outcome.
     const v = evaluate(row, ctx);
     if (!v.ok) { rejected.push({ name, reason: v.reason, detail: v.detail }); continue; }
-    eligible++;
-    if (accepted.length >= max || lookups >= maxLookups) { deferred++; continue; }
+    const ns = v.plan.parsed.ns;
+    if ((perPublisher.get(ns) ?? 0) >= maxPerPublisher) { cappedByPublisher++; deferred++; continue; }
     if (nowImpl() - lookupStart > lookupBudgetMs) throw new Error(`lookup time budget (${Math.round(lookupBudgetMs / 1000)}s) exhausted after ${lookups} lookups`);
     lookups++;
     let enrich;
@@ -78,14 +106,17 @@ export async function runSync({
     if (bad) { rejected.push({ name, reason: 'schema-or-pin', detail: String(bad).slice(0, 100) }); continue; }
     takenSlugs.add(built.entry.name);
     ctx.knownSlugs.add(built.entry.name);
-    accepted.push({ entry: built.entry, plan: v.plan });
+    perPublisher.set(ns, (perPublisher.get(ns) ?? 0) + 1);
+    acceptedTiers[tier]++;
+    accepted.push({ entry: built.entry, plan: v.plan, tier });
   }
+  const scope = { tierCounts, acceptedTiers, cappedByPublisher, maxPerPublisher, publishers: perPublisher.size };
 
   let text = registryText.endsWith('\n') ? registryText : registryText + '\n';
   if (accepted.length) text += yaml.dump(accepted.map(a => a.entry), { lineWidth: 100, noRefs: true, noArrayIndent: true });
   const date = now.slice(0, 10);
-  const body = renderPrBody({ accepted, rejected, skipped, stats: { rows: rawRows ?? rows.length, pages, rejected: rejected.length + droppedTotal(dropped), deferred, skipped: skippedCount ?? skipped.length }, dropped, date, dryRun });
-  return { registryText: text, body, accepted, rejected, deferred, eligible, lookups, branch: `sync/official-${date}`, date };
+  const body = renderPrBody({ accepted, rejected, skipped, stats: { rows: rawRows ?? rows.length, pages, rejected: rejected.length + droppedTotal(dropped), deferred, skipped: skippedCount ?? skipped.length }, dropped, date, dryRun, scope, watermark });
+  return { registryText: text, body, scope, accepted, rejected, deferred, eligible, lookups, branch: `sync/official-${date}`, date };
 }
 
 async function main() {
@@ -93,8 +124,10 @@ async function main() {
   const out = arg('--out') ?? 'sync-out';
   const regPath = arg('--registry') ?? 'registry.yaml';
   const max = Number(arg('--max') ?? 10);
+  const maxPerPublisher = Number(arg('--max-per-publisher') ?? 2);
   const now = arg('--now') ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   if (!Number.isInteger(max) || max < 1 || max > 50) throw new Error('--max must be 1..50');
+  if (!Number.isInteger(maxPerPublisher) || maxPerPublisher < 1 || maxPerPublisher > 50) throw new Error('--max-per-publisher must be 1..50');
   if (!/^\d{4}-\d{2}-\d{2}T[\d:]+Z$/.test(now)) throw new Error('--now must be an ISO UTC timestamp');
   const { makeValidator } = await import('./schema-validate.mjs');
   const deny = yaml.load(fs.readFileSync(new URL('denylist.yaml', here), 'utf8')) ?? {};
@@ -102,12 +135,14 @@ async function main() {
   const top = readJson('top-packages.json');
   // Network-free early filter for the fetcher: the same context builder runSync uses, but only the no-slug-state rules apply.
   const earlyCtx = buildContext({ registryText, deny, top });
+  const watermark = process.argv.includes('--full-scan') ? undefined : deriveWatermark(registryText, Date.parse(now));
+  console.error(watermark ? `scan: incremental, updated_since ${watermark}` : 'scan: full (no watermark or --full-scan)');
   const feed = arg('--rows-file')
     ? { rows: JSON.parse(fs.readFileSync(arg('--rows-file'), 'utf8')), skipped: [], pages: 1 }
-    : await fetchAll({ keep: row => { const v = cheapDrop(row, earlyCtx); return v.ok ? undefined : v.reason; } });
+    : await fetchAll({ keep: row => { const v = cheapDrop(row, earlyCtx); return v.ok ? undefined : v.reason; }, updatedSince: watermark });
   if (feed.dropped) console.error(`fetched ${feed.rawRows} raw rows in ${feed.pages} pages; kept ${feed.rows.length}; dropped ${JSON.stringify(feed.dropped)}`);
   const res = await runSync({
-    registryText, ...feed, max, now, validate: makeValidator(),
+    registryText, ...feed, max, maxPerPublisher, watermark, now, validate: makeValidator(),
     deny, top, dryRun: process.argv.includes('--dry-run'),
   });
   const byReason = {};
@@ -116,6 +151,7 @@ async function main() {
   const skippedN = feed.skippedCount ?? feed.skipped?.length ?? 0;
   const cheapN = Object.values(feed.dropped ?? {}).reduce((a, b) => a + b, 0);
   console.error(`funnel: ${feed.rawRows ?? feed.rows.length} raw rows − ${skippedN} skipped (unknown $schema/malformed) − ${cheapN} cheap-dropped = ${feed.rows.length} kept → ${res.eligible} eligible candidates (before --max ${max}) → ${res.accepted.length} proposed; ${res.lookups} lookups`);
+  console.error(`tiers: eligible ${res.scope.tierCounts[1]} verified-namespace / ${res.scope.tierCounts[2]} other; proposed ${res.scope.acceptedTiers[1]} / ${res.scope.acceptedTiers[2]}; ${res.scope.publishers} publishers, cap ${maxPerPublisher} each held back ${res.scope.cappedByPublisher}`);
   console.error(`cheap-dropped by reason: ${JSON.stringify(sortDesc(feed.dropped ?? {}))}`);
   console.error(`rejected by reason: ${JSON.stringify(sortDesc(byReason))}`);
   console.error(`heapUsed: ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`);

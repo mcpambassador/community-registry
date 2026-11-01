@@ -18,6 +18,14 @@ on:
         description: Per-run candidate cap (1-50)
         type: number
         default: 10
+      max_per_publisher:
+        description: Per-run cap of proposed entries per publisher namespace (1-50)
+        type: number
+        default: 2
+      full_scan:
+        description: Ignore the updated_since watermark and walk the whole feed
+        type: boolean
+        default: false
   # The weekly schedule is enabled only after one reviewed dry run (ADR-024 §7). A test pins this.
   # schedule:
   #   - cron: '17 6 * * 1'
@@ -53,10 +61,13 @@ jobs:
         env:
           MAX_CANDIDATES: ${{ inputs.max_candidates }}
           DRY_RUN: ${{ inputs.dry_run }}
+          MAX_PER_PUBLISHER: ${{ inputs.max_per_publisher }}
+          FULL_SCAN: ${{ inputs.full_scan }}
         run: |
           flags=""
           if [ "$DRY_RUN" = "true" ]; then flags="--dry-run"; fi
-          node scripts/sync-official/sync.mjs --out sync-out --max "${MAX_CANDIDATES:-10}" $flags
+          if [ "$FULL_SCAN" = "true" ]; then flags="$flags --full-scan"; fi
+          node scripts/sync-official/sync.mjs --out sync-out --max "${MAX_CANDIDATES:-10}" --max-per-publisher "${MAX_PER_PUBLISHER:-2}" $flags
       - name: Pre-flight policy checks (same script the PR check runs)
         env:
           SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
