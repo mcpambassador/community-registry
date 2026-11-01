@@ -97,7 +97,7 @@ export function parsePage(json) {
  */
 export async function fetchAll({
   base = OFFICIAL_BASE, fetchImpl = fetch, maxPages = LIMITS.maxPages, maxRawRows = LIMITS.maxRawRows,
-  budgetMs = LIMITS.budgetMs, maxTotalBytes = LIMITS.maxTotalBytes, logEvery = LIMITS.logEvery, keep = () => undefined, log = console.error, nowImpl = Date.now,
+  budgetMs = LIMITS.budgetMs, maxTotalBytes = LIMITS.maxTotalBytes, logEvery = LIMITS.logEvery, keep = () => undefined, log = console.error, nowImpl = Date.now, updatedSince,
 } = {}) {
   const seenCursors = new Set();
   const seenRows = new Set();
@@ -113,7 +113,7 @@ export async function fetchAll({
     if (page >= maxPages) throw new Error(`page cap (${maxPages}) reached before the feed ended`);
     const remaining = budgetMs - (nowImpl() - started);
     if (remaining <= 0) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended`);
-    const url = `${base}/v0.1/servers?limit=${LIMITS.pageSize}&version=latest${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+    const url = `${base}/v0.1/servers?limit=${LIMITS.pageSize}&version=latest${updatedSince ? `&updated_since=${encodeURIComponent(updatedSince)}` : ''}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
     let res;
     try {
       res = await getJson(url, { fetchImpl, timeoutMs: Math.min(LIMITS.timeoutMs, remaining) });

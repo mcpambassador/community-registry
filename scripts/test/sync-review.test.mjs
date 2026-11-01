@@ -76,9 +76,9 @@ test('ordering: newest updatedAt first (publishedAt fallback); name then version
     mk('io.github.acme/zeta', { updatedAt: '2026-09-01T00:00:00Z' }),
     mk('io.github.acme/old', {}),
   ];
-  const res = await sync(rows, { max: 10 });
+  const res = await sync(rows, { max: 10, maxPerPublisher: 50 });
   assert.deepEqual(res.accepted.map(a => a.plan.officialName), ['io.github.acme/c', 'io.github.acme/a', 'io.github.acme/b', 'io.github.acme/zeta', 'io.github.acme/old']);
-  const again = await sync([...rows].reverse(), { max: 10 });
+  const again = await sync([...rows].reverse(), { max: 10, maxPerPublisher: 50 });
   assert.deepEqual(again.accepted.map(a => a.plan.officialName), res.accepted.map(a => a.plan.officialName));
   assert.match(res.body, /To permanently decline a candidate, add it to the denylist; closing this PR does not\./);
 });
@@ -113,7 +113,7 @@ test('ordering: a future-dated row (more than a day ahead) does not sort first',
     npmRow('io.github.acme/recent', { updatedAt: '2026-11-07T00:00:00Z' }),
     npmRow('io.github.acme/soon', { updatedAt: '2026-11-08T12:00:00Z' }), // within one day of NOW: still honoured
   ];
-  const res = await sync(rows, { max: 10 });
+  const res = await sync(rows, { max: 10, maxPerPublisher: 50 });
   assert.deepEqual(res.accepted.map(a => a.plan.officialName), ['io.github.acme/soon', 'io.github.acme/recent', 'io.github.acme/future']);
 });
 

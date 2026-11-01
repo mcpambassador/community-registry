@@ -225,3 +225,19 @@ export function evaluate(row, ctx) {
   flags.add('remote-auth-unverified');
   return { ok: true, plan: { ...base, kind: 'remote', url: url.href, version: PLAIN_VERSION.test(s.version) ? s.version : '1.0.0', argv: [], env: [] } };
 }
+
+/** Review-priority tier (FB-034): 1 = namespace ownership is provable (io.github.* or a remote whose host matches the reverse-DNS domain), 2 = the rest. */
+export function publisherTier(plan) {
+  if (plan.parsed.kind === 'github') return 1;
+  return plan.kind === 'remote' && !plan.flags.has('host-mismatch') ? 1 : 2;
+}
+
+/**
+ * Per-publisher cap key (FB-034): lowercased `io.github.<owner>` for GitHub namespaces; for domain namespaces the first two
+ * labels of the reverse-DNS name (com.acme.mcp → com.acme). No public-suffix list, so co.uk-style suffixes (uk.co.acme)
+ * collapse to the suffix (uk.co) and over-share one cap; that errs on the strict side.
+ */
+export function publisherKey(parsed) {
+  const ns = parsed.ns.toLowerCase();
+  return parsed.kind === 'github' ? ns : ns.split('.').slice(0, 2).join('.');
+}
