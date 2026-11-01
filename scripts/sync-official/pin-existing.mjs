@@ -5,22 +5,15 @@
 // Default is a dry run that prints the plan. Packages that do not exist are reported, never silently kept.
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { getJson } from './fetch-official.mjs';
 
-const MAX_BYTES = 5 * 1024 * 1024;
 const NPM_VERSION = /^\d+\.\d+\.\d+$/;
 const PYPI_VERSION = /^\d+(\.\d+){0,3}(\.post\d+)?$/;
 const NPM_NAME = /^(@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 const PYPI_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
-/** Fetch JSON with a size cap and timeout. Returns {status, json}. */
-export async function fetchJson(url) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(20000), headers: { accept: 'application/json' } });
-  if (res.status === 404) return { status: 404 };
-  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  if (buf.length > MAX_BYTES) throw new Error(`${url}: response too large`);
-  return { status: 200, json: JSON.parse(buf.toString('utf8')) };
-}
+/** Fetch JSON with timeout, size and depth caps (shared with the sync). */
+export const fetchJson = url => getJson(url);
 
 export async function lookupNpm(name, get = fetchJson) {
   if (!NPM_NAME.test(name)) return { error: `invalid npm name ${name}` };

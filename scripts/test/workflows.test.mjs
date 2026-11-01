@@ -28,3 +28,26 @@ for (const f of files) {
     }
   });
 }
+
+test('sync-official-registry: two-job split, dry_run default, no schedule, privileged job runs no npm', () => {
+  const wf = yaml.load(fs.readFileSync(path.join(dir, 'sync-official-registry.yml'), 'utf8'));
+  const on = wf.on ?? wf[true];
+  assert.equal(on.workflow_dispatch.inputs.dry_run.default, true, 'dry_run must default to true');
+  assert.ok(!('schedule' in on), 'no active schedule until a reviewed dry run (ADR-024 §7)');
+  assert.deepEqual(wf.permissions, {}, 'top-level permissions must be empty');
+  const { prepare, ['open-pr']: open } = wf.jobs;
+  assert.deepEqual(prepare.permissions, { contents: 'read' });
+  assert.equal(open.environment, 'registry-sync');
+  assert.deepEqual(open.permissions, { contents: 'read' });
+  assert.match(prepare.if, /refs\/heads\/main/);
+  assert.match(open.if, /dry_run == false/);
+  for (const s of open.steps) {
+    assert.ok(!/setup-node/.test(s.uses ?? ''), 'open-pr must not set up node tooling');
+    assert.ok(!/\b(npm|npx|pnpm|yarn)\b/.test(s.run ?? ''), 'open-pr must not run npm');
+  }
+  const app = open.steps.find(s => /create-github-app-token/.test(s.uses ?? ''));
+  assert.equal(app.with['permission-contents'], 'write');
+  assert.equal(app.with['permission-pull-requests'], 'write');
+  assert.ok(!Object.keys(app.with).some(k => /workflows/.test(k)), 'no workflows permission');
+  for (const s of open.steps) assert.ok(!/\$\{\{\s*steps\.app\.outputs\.token\s*\}\}/.test(s.run ?? ''), 'token must not appear in a command line');
+});

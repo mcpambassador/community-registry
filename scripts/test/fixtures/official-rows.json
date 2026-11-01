@@ -1,0 +1,131 @@
+[
+ {
+  "server": {
+   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+   "name": "ac.snag/snag",
+   "description": "Gives your coding agent the captured console, network, replay and screenshot evidence for a bug.",
+   "version": "1.0.0",
+   "remotes": [
+    {
+     "type": "streamable-http",
+     "url": "https://mcp.snag.ac/mcp"
+    }
+   ]
+  },
+  "_meta": {
+   "io.modelcontextprotocol.registry/official": {
+    "status": "active",
+    "statusChangedAt": "2026-09-09T10:35:53.194664Z",
+    "publishedAt": "2026-09-09T10:35:53.194664Z",
+    "updatedAt": "2026-09-09T10:35:53.194664Z",
+    "isLatest": true
+   }
+  }
+ },
+ {
+  "server": {
+   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+   "name": "agency.kesey/pretrip",
+   "description": "Screen regulated-health marketing copy against source-cited rulesets, all 50 states.",
+   "title": "Pre-Trip compliance scanner",
+   "version": "1.0.1",
+   "websiteUrl": "https://scan.kesey.agency/developers/",
+   "packages": [
+    {
+     "registryType": "npm",
+     "identifier": "pretrip-mcp",
+     "version": "1.0.1",
+     "transport": {
+      "type": "stdio"
+     }
+    }
+   ]
+  },
+  "_meta": {
+   "io.modelcontextprotocol.registry/official": {
+    "status": "active",
+    "statusChangedAt": "2026-07-26T18:03:21.463557Z",
+    "publishedAt": "2026-07-26T18:03:21.463557Z",
+    "updatedAt": "2026-07-26T18:03:21.463557Z",
+    "isLatest": true
+   }
+  }
+ },
+ {
+  "server": {
+   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+   "name": "ai.adeu/adeu",
+   "description": "Automated DOCX Redlining Engine",
+   "repository": {
+    "url": "https://github.com/dealfluence/adeu",
+    "source": "github"
+   },
+   "version": "1.7.1",
+   "packages": [
+    {
+     "registryType": "npm",
+     "identifier": "@adeu/mcp-server",
+     "version": "1.7.1",
+     "transport": {
+      "type": "stdio"
+     }
+    }
+   ]
+  },
+  "_meta": {
+   "io.modelcontextprotocol.registry/official": {
+    "status": "active",
+    "statusChangedAt": "2026-05-16T13:54:48.18266Z",
+    "publishedAt": "2026-05-16T13:54:48.18266Z",
+    "updatedAt": "2026-05-16T13:54:48.18266Z",
+    "isLatest": true
+   }
+  }
+ },
+ {
+  "server": {
+   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+   "name": "ai.2kw/mcp-server",
+   "description": "EU-hosted AI platform: OpenAI-compatible LLM gateway, document extraction, transcription, agents.",
+   "title": "2kw.ai",
+   "version": "8.0.3",
+   "websiteUrl": "https://2kw.ai",
+   "packages": [
+    {
+     "registryType": "npm",
+     "registryBaseUrl": "https://registry.npmjs.org",
+     "identifier": "@2kw/ai-mcp-server",
+     "version": "8.0.3",
+     "transport": {
+      "type": "stdio"
+     },
+     "environmentVariables": [
+      {
+       "description": "API key for the 2kw.ai platform",
+       "isRequired": true,
+       "isSecret": true,
+       "name": "AI_2KW_API_KEY"
+      },
+      {
+       "description": "Override the API base URL for self-hosted deployments",
+       "name": "AI_2KW_BASE_URL"
+      },
+      {
+       "description": "true opts agent runs into agent memory (X-Backbone-Memory: enabled)",
+       "name": "AI_2KW_MEMORY"
+      }
+     ]
+    }
+   ]
+  },
+  "_meta": {
+   "io.modelcontextprotocol.registry/official": {
+    "status": "active",
+    "statusChangedAt": "2026-10-25T22:46:43.86716Z",
+    "publishedAt": "2026-10-25T22:46:43.86716Z",
+    "updatedAt": "2026-10-25T22:46:43.86716Z",
+    "isLatest": true
+   }
+  }
+ }
+]
