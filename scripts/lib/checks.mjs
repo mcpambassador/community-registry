@@ -15,6 +15,11 @@ const BAD_TEXT = new RegExp(
   'u'
 );
 
+/** Remove the characters BAD_TEXT rejects (used by the sync mapper on upstream text). */
+export function stripUnsafeText(text) {
+  return String(text).replace(new RegExp(BAD_TEXT.source, 'gu'), '');
+}
+
 const NPM_PIN = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const PYPI_PIN = /^[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[A-Za-z0-9,._-]+\])?==\d+(?:\.\d+)*(?:(?:\.|-|_)?(?:a|b|rc|post|dev)\d*)*(?:\+[A-Za-z0-9.]+)?$/;
 

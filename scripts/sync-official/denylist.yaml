@@ -1,0 +1,5 @@
+# Reviewed-and-rejected candidates (ADR-024 §4.3(5)). Reviewed like any other change (CODEOWNERS).
+# names: official server names (reverse-DNS/name) or registry slugs that must never be proposed.
+# packages: npm/pypi package identifiers that must never be proposed.
+names: []
+packages: []

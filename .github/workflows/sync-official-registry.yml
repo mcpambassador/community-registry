@@ -1,0 +1,136 @@
+# Official MCP Registry sync (ADR-024). Two jobs, deliberately separated:
+#   prepare  - read-only. Fetches, maps and validates; may install lockfile-pinned npm deps. Emits an artifact only.
+#   open-pr  - privileged (environment `registry-sync`). Fresh checkout, NO npm install, re-runs the diff-scope
+#              check with the vendored YAML parser, then mints the GitHub App token and opens the PR.
+#              This job never runs third-party code.
+# The sync never merges, never pushes to main, and never installs or runs a candidate package.
+# SECURITY: never switch to `pull_request_target`; this workflow has no pull_request trigger at all.
+name: Sync official registry
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (default): build the candidate set and print the would-be PR body, open nothing'
+        type: boolean
+        default: true
+      max_candidates:
+        description: Per-run candidate cap (1-50)
+        type: number
+        default: 10
+  # The weekly schedule is enabled only after one reviewed dry run (ADR-024 §7). A test pins this.
+  # schedule:
+  #   - cron: '17 6 * * 1'
+
+permissions: {}
+
+concurrency:
+  group: sync-official-registry
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Fetch, map and validate (read-only)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    outputs:
+      has_changes: ${{ steps.sync.outputs.has_changes }}
+      branch: ${{ steps.sync.outputs.branch }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '20'
+      - name: Install pinned dependencies (no lifecycle scripts)
+        run: npm ci --ignore-scripts
+      - name: Build the candidate set
+        id: sync
+        env:
+          MAX_CANDIDATES: ${{ inputs.max_candidates }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          flags=""
+          if [ "$DRY_RUN" = "true" ]; then flags="--dry-run"; fi
+          node scripts/sync-official/sync.mjs --out sync-out --max "${MAX_CANDIDATES:-10}" $flags
+      - name: Pre-flight policy checks (same script the PR check runs)
+        env:
+          SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
+        run: |
+          branch="$(node -p "require('./sync-out/summary.json').branch")"
+          printf 'registry.yaml\n' > "$RUNNER_TEMP/changed.txt"
+          HEAD_REF="$branch" PR_AUTHOR="$SYNC_APP_LOGIN" node scripts/ci/check.mjs \
+            --base registry.yaml --head sync-out/registry.yaml --changed-files "$RUNNER_TEMP/changed.txt"
+      - name: Show the would-be PR body
+        run: cat sync-out/pr-body.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sync-out
+          path: |
+            sync-out/registry.yaml
+            sync-out/pr-body.md
+            sync-out/summary.json
+          retention-days: 7
+          if-no-files-found: error
+
+  open-pr:
+    name: Open the review PR (privileged, no third-party code)
+    needs: prepare
+    if: needs.prepare.outputs.has_changes == 'true' && inputs.dry_run == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: registry-sync
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: sync-out
+          path: sync-out
+      - name: Re-run diff-scope on exactly what will be pushed
+        env:
+          SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
+        run: |
+          set -euo pipefail
+          branch="$(node -p "require('./sync-out/summary.json').branch")"
+          case "$branch" in sync/official-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]) ;; *) echo "bad branch name"; exit 1 ;; esac
+          [ "$(wc -c < sync-out/pr-body.md)" -le 65000 ] || { echo "PR body too large"; exit 1; }
+          git show HEAD:registry.yaml > "$RUNNER_TEMP/base.yaml"
+          cp sync-out/registry.yaml registry.yaml
+          git diff --name-only > "$RUNNER_TEMP/changed.txt"
+          HEAD_REF="$branch" PR_AUTHOR="$SYNC_APP_LOGIN" node scripts/ci/check.mjs \
+            --base "$RUNNER_TEMP/base.yaml" --head registry.yaml --changed-files "$RUNNER_TEMP/changed.txt"
+          echo "BRANCH=$branch" >> "$GITHUB_ENV"
+      - name: Mint the App installation token (this step only)
+        id: app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.REGISTRY_SYNC_APP_ID }}
+          private-key: ${{ secrets.REGISTRY_SYNC_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Push the branch and open the PR
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          git config user.name "registry-sync[bot]"
+          git config user.email "registry-sync@users.noreply.github.com"
+          git config --local credential.helper '!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f'
+          git checkout -b "$BRANCH"
+          git add registry.yaml
+          git commit -m "chore(sync): propose official-registry candidates (${BRANCH#sync/official-})"
+          git push origin "$BRANCH"
+          gh pr create --base main --head "$BRANCH" \
+            --title "sync: official registry candidates (${BRANCH#sync/official-})" \
+            --body-file sync-out/pr-body.md

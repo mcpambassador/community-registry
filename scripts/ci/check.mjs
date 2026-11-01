@@ -7,7 +7,7 @@
 // Sync-PR detection reads HEAD_REF, PR_AUTHOR and SYNC_APP_LOGIN from the environment (never from
 // an interpolated workflow expression). A sync PR also gets the diff-scope rules.
 import fs from 'node:fs';
-import yaml from 'js-yaml';
+import yaml from '../lib/yaml.mjs';
 import { isSyncPr, universalChecks, diffScope } from '../lib/checks.mjs';
 
 function arg(name) {
