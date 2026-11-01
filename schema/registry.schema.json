@@ -74,10 +74,11 @@
         "oauth_config": {
           "type": "object",
           "properties": {
-            "auth_url": { "type": "string", "format": "uri" },
-            "token_url": { "type": "string", "format": "uri" },
+            "auth_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+            "token_url": { "type": "string", "format": "uri", "pattern": "^https://" },
+            "revocation_url": { "type": "string", "format": "uri", "pattern": "^https://" },
             "scopes": { "type": "string" },
-            "client_id_env": { "type": "string" },
+            "client_id_env": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*_CLIENT_ID$" },
             "client_secret_env": { "type": "string" },
             "access_token_env_var": { "type": "string" }
           },
