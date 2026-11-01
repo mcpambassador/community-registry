@@ -257,4 +257,4 @@ jobs:
             echo "::error::base has no scripts/ci/check.mjs and this PR does not add it; refusing to skip policy checks"
             exit 1
           fi
-          node "$CHECKER_DIR/scripts/ci/check.mjs" --base base/registry.yaml --head head/registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt"
+          node "$CHECKER_DIR/scripts/ci/check.mjs" --base base/registry.yaml --head head/registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
