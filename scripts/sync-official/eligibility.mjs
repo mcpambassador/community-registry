@@ -149,7 +149,12 @@ function isPublicHttpsUrl(raw) {
  * Evaluate one list row. `ctx`: { takenSlugs:Set, existingOfficialNames:Set, knownSlugs:Set, knownPackages:Set,
  * denyNames:Set, denyPackages:Set }.  Returns {ok:true, plan} or {ok:false, reason, detail?}.
  */
-export function evaluate(row, ctx) {
+/**
+ * The network-free, ctx-light prefix of `evaluate`: the cheap reasons a row can never be a candidate. Shared with the
+ * fetcher so it can drop such rows page by page instead of holding the whole feed. Returns the same shape as `evaluate`
+ * on a drop, or {ok:true, ...parsed pieces} to continue.
+ */
+export function cheapDrop(row, ctx) {
   const s = row.server;
   const meta = row._meta?.[OFFICIAL_META_KEY];
   if (meta?.status !== 'active') return { ok: false, reason: 'status-not-active', detail: String(meta?.status ?? 'unknown').slice(0, 40) };
@@ -169,6 +174,14 @@ export function evaluate(row, ctx) {
     return { ok: false, reason: 'unsupported-type', detail: kinds || 'none' };
   }
   if (usable > 1) return { ok: false, reason: 'ambiguous-multiple-runnable' };
+  return { ok: true, parsed, usablePkgs, usableRemotes };
+}
+
+export function evaluate(row, ctx) {
+  const s = row.server;
+  const pre = cheapDrop(row, ctx);
+  if (!pre.ok) return pre;
+  const { parsed, usablePkgs, usableRemotes } = pre;
 
   const flags = new Set();
   const slugChoice = chooseSlug(parsed, ctx.takenSlugs);

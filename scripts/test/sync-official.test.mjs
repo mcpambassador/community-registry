@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import yaml from '../lib/yaml.mjs';
-import { evaluate, mapArguments, editDistance, nearMatch, parseOfficialName, chooseSlug, OFFICIAL_META_KEY } from '../sync-official/eligibility.mjs';
-import { fetchAll, getJson, parsePage, jsonDepth, ALLOWED_SCHEMAS } from '../sync-official/fetch-official.mjs';
+import { evaluate, cheapDrop, mapArguments, editDistance, nearMatch, parseOfficialName, chooseSlug, OFFICIAL_META_KEY } from '../sync-official/eligibility.mjs';
+import { LIMITS, fetchAll, getJson, parsePage, jsonDepth, ALLOWED_SCHEMAS } from '../sync-official/fetch-official.mjs';
 import { runSync } from '../sync-official/sync.mjs';
 import { lookupCandidate, hasPypiMarker } from '../sync-official/index-lookup.mjs';
 import { makeValidator } from '../sync-official/schema-validate.mjs';
@@ -132,7 +132,56 @@ test('fetchAll: repeated cursor, empty-progress page, page cap and row cap all f
   let n = 0;
   await assert.rejects(fetchAll({ fetchImpl: async () => jsonRes(page([`io.github.a/n${n++}`], `c${n}`)), maxPages: 3 }), /page cap/);
   let m = 0;
-  await assert.rejects(fetchAll({ fetchImpl: async () => jsonRes(page([`io.github.a/m${m++}`, `io.github.a/m${m++}`], `d${m}`)), maxRows: 3 }), /row cap/);
+  await assert.rejects(fetchAll({ fetchImpl: async () => jsonRes(page([`io.github.a/m${m++}`, `io.github.a/m${m++}`], `d${m}`)), maxRawRows: 3 }), /raw row cap/);
+});
+
+test('fetchAll: requests latest versions at the max page size, with the documented caps', async () => {
+  let url;
+  await fetchAll({ fetchImpl: async u => { url = u; return jsonRes(page(['io.github.a/a'])); } });
+  assert.match(url, /limit=100&version=latest/);
+  assert.deepEqual([LIMITS.pageSize, LIMITS.maxPages, LIMITS.maxRawRows, LIMITS.budgetMs], [100, 1650, 165_000, 600_000]);
+});
+
+test('fetchAll: early-drop keeps survivors only; the raw-row cap governs and counts dropped rows too; there is no separate kept-row cap', async () => {
+  const keep = r => (r.server.name.startsWith('io.github.drop') ? 'dropped-x' : undefined);
+  const pages = [page(['io.github.drop/1', 'io.github.drop/2', 'io.github.ok/1'], 'c1'), page(['io.github.drop/3'])];
+  let i = 0;
+  const out = await fetchAll({ fetchImpl: async () => jsonRes(pages[i++]), keep });
+  assert.deepEqual(out.rows.map(r => r.server.name), ['io.github.ok/1']);
+  assert.equal(out.rawRows, 4);
+  assert.deepEqual(out.dropped, { 'dropped-x': 3 });
+  let n = 0;
+  await assert.rejects(fetchAll({ fetchImpl: async () => jsonRes(page([`io.github.drop/r${n++}`, `io.github.drop/r${n++}`], `r${n}`)), keep, maxRawRows: 5 }), /raw row cap/);
+  let k = 0;
+  const many = await fetchAll({ fetchImpl: async () => jsonRes(k < 4 ? page([`io.github.drop/z${k++}`, `io.github.drop/z${k++}`], `z${k}`) : page([])), keep, maxRawRows: 100 });
+  assert.equal(many.rows.length, 0);
+  let q = 0;
+  const kept = await fetchAll({ fetchImpl: async () => jsonRes(q < 6 ? page([`io.github.ok/q${q++}`, `io.github.ok/q${q++}`], `q${q}`) : page([])), maxRawRows: 100 });
+  assert.equal(kept.rows.length, 6); // kept rows are not capped separately; only the raw cap bounds the walk
+});
+
+test('fetchAll: wall-clock budget fails closed with a clear error', async () => {
+  let t = 0;
+  let n = 0;
+  await assert.rejects(
+    fetchAll({ fetchImpl: async () => { t += 400; return jsonRes(page([`io.github.a/t${n++}`], `t${n}`)); }, nowImpl: () => t, budgetMs: 1000 }),
+    /time budget \(1s\) exhausted/,
+  );
+});
+
+test('fetchAll: logs progress every N pages', async () => {
+  const logs = [];
+  let n = 0;
+  await assert.rejects(fetchAll({ fetchImpl: async () => jsonRes(page([`io.github.a/l${n++}`], `l${n}`)), maxPages: 5, logEvery: 2, log: m => logs.push(m) }), /page cap/);
+  assert.equal(logs.length, 2);
+  assert.match(logs[0], /2 pages, 2 raw rows, 2 kept/);
+});
+
+test('cheapDrop agrees with evaluate on the network-free reasons', () => {
+  const c = ctx({ denyNames: new Set(['io.github.acme/thing']) });
+  assert.equal(cheapDrop(npmRow({}), c).reason, 'deny-listed');
+  assert.equal(cheapDrop(row({ name: 'io.github.acme/thing', packages: [npmPkg()] }, { isLatest: false }), ctx()).reason, 'not-latest');
+  assert.equal(cheapDrop(npmRow({}), ctx()).ok, true);
 });
 
 test('getJson: oversized body aborted at the cap, declared and streamed', async () => {
