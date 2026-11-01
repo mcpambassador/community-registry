@@ -31,7 +31,8 @@ const OVERLAP_MS = 86_400_000;
 /** Incremental-scan watermark (FB-034): newest `synced_at` of an official-registry entry minus a 1-day overlap, or undefined (→ full scan). */
 export function deriveWatermark(registryText, nowMs = Date.now()) {
   let best = 0;
-  for (const m of yaml.load(registryText)?.mcps ?? []) {
+  const mcps = yaml.load(registryText)?.mcps;
+  for (const m of Array.isArray(mcps) ? mcps : []) {
     if (m.source !== 'official-registry') continue;
     const t = Date.parse(m.synced_at ?? '');
     if (Number.isFinite(t) && t <= nowMs && t > best) best = t;
