@@ -52,15 +52,31 @@ test('sync-official-registry: two-job split, dry_run default, no schedule, privi
   for (const s of open.steps) assert.ok(!/\$\{\{\s*steps\.app\.outputs\.token\s*\}\}/.test(s.run ?? ''), 'token must not appear in a command line');
 });
 
-test('validate-registry: the policy checker runs from the base ref, not the PR head (B1)', () => {
+test('validate-registry: policy checker runs from the base ref in its own job, failing closed (B1)', () => {
   const wf = yaml.load(fs.readFileSync(path.join(dir, 'validate-registry.yml'), 'utf8'));
-  const steps = Object.values(wf.jobs).flatMap(j => j.steps ?? []);
-  const base = steps.find(s => s.uses?.startsWith('actions/checkout@') && s.with?.path === 'base');
-  assert.ok(base, 'a second checkout with path: base is required');
+  const job = wf.jobs['policy-checks'];
+  assert.ok(job, 'policy-checks job exists');
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  const base = job.steps.find(s => s.uses?.startsWith('actions/checkout@') && s.with?.path === 'base');
+  assert.ok(base, 'checkout with path: base');
   assert.equal(base.with.ref, '${{ github.event.pull_request.base.sha }}');
   assert.equal(base.with['persist-credentials'], false);
-  const policy = steps.find(s => /scripts\/ci\/check\.mjs/.test(s.run ?? ''));
-  assert.ok(policy, 'policy step exists');
-  assert.match(policy.run, /node base\/scripts\/ci\/check\.mjs/);
-  assert.doesNotMatch(policy.run, /node scripts\/ci\/check\.mjs/);
+  const head = job.steps.find(s => s.uses?.startsWith('actions/checkout@') && s.with?.path === 'head');
+  assert.ok(head && head.with['persist-credentials'] === false, 'head checkout is data-only');
+  const policy = job.steps.find(s => /check\.mjs/.test(s.run ?? ''));
+  const run = policy.run;
+  // base checker preferred; PR-supplied checker only when the PR adds it; otherwise hard failure
+  assert.match(run, /if \[ -f base\/scripts\/ci\/check\.mjs \]/);
+  assert.match(run, /--diff-filter=A[^\n]*\| grep -qx scripts\/ci\/check\.mjs/);
+  assert.match(run, /::error::[\s\S]*exit 1/);
+  assert.match(run, /::warning::/);
+  assert.match(run, /node "\$CHECKER_DIR\/scripts\/ci\/check\.mjs"/);
+  // the head's dependencies are installed only in the bootstrap branch
+  assert.equal((run.match(/cd head && npm ci/g) ?? []).length, 1);
+  assert.ok(run.indexOf('cd base && npm ci') < run.indexOf('cd head && npm ci'));
+  // no other job runs the checker from the head
+  for (const [n, j] of Object.entries(wf.jobs)) {
+    if (n === 'policy-checks') continue;
+    for (const st of j.steps ?? []) assert.doesNotMatch(st.run ?? '', /scripts\/ci\/check\.mjs/, `${n} must not run the checker`);
+  }
 });
