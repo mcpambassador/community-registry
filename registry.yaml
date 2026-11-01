@@ -51,16 +51,16 @@ mcps:
   display_name: Alpaca Trading
   description: Alpaca Trading and Market Data API for stocks, options and crypto - account,
     orders, positions, watchlists, quotes, bars and news. Paper trading by default; live
-    trading requires the admin to change ALPACA_PAPER_TRADE. Order-placing, order-modifying
-    and position-closing tools should be gated with requires_approval.
+    trading requires the admin to change ALPACA_PAPER_TRADE. Paper mode requires
+    ALPACA_PAPER_TRADE to be exactly 'true' - upstream treats any other value as LIVE.
+    After install, admins should turn on requires_approval for the order-placing,
+    order-modifying and position-closing tools.
   transport_type: stdio
   config:
     command:
     - uvx
     - alpaca-mcp-server==2.4.0
     env:
-      ALPACA_API_KEY: ${ALPACA_API_KEY}
-      ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY}
       ALPACA_PAPER_TRADE: 'true'
   auth_type: static
   requires_user_credentials: true
@@ -69,10 +69,12 @@ mcps:
     properties:
       ALPACA_API_KEY:
         type: string
+        env_var: ALPACA_API_KEY
         title: Alpaca API Key
         description: Your Alpaca API key (use a paper-trading key unless live trading is enabled)
       ALPACA_SECRET_KEY:
         type: string
+        env_var: ALPACA_SECRET_KEY
         title: Alpaca Secret Key
         description: Your Alpaca API secret key
     required:
