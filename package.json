@@ -1,0 +1,16 @@
+{
+  "name": "community-registry-tools",
+  "private": true,
+  "type": "module",
+  "description": "CI tooling for the MCP Ambassador community registry (validation, diff-scope, pinning, official-registry sync).",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test scripts/",
+    "check": "node scripts/ci/check.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.17.1",
+    "ajv-formats": "3.0.1",
+    "js-yaml": "4.1.0"
+  }
+}

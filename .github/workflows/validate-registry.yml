@@ -1,32 +1,39 @@
+# SECURITY: never switch this workflow (or any workflow in this repo) to `pull_request_target`.
+# It would run untrusted PR content with a privileged token. Sync PRs from the official-registry
+# sync are untrusted input like any other (ADR-024); a test (scripts/test/workflows.test.mjs) enforces it.
 name: Validate Registry
 
 on:
+  # No `paths` filter: the diff-scope check must see every file a sync-branch PR touches,
+  # and a required check that is skipped by a path filter never reports.
   pull_request:
     branches: [main]
-    paths:
-      - 'registry.yaml'
-      - 'schema/**'
 
 concurrency:
   group: validate-${{ github.ref }}
   cancel-in-progress: true
+
+permissions: {}
 
 jobs:
   validate-schema:
     name: Validate registry.yaml against schema
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
 
-      - name: Install validation dependencies
-        run: npm install --no-save ajv ajv-formats js-yaml
+      - name: Install validation dependencies (lockfile, no install scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Validate registry.yaml
         id: validate
@@ -161,9 +168,25 @@ jobs:
           console.log('OAuth config checks passed.');
           EOF
 
+      - name: Registry policy checks (pins, text lint, verified, sync diff-scope)
+        env:
+          # passed via env, never interpolated into the script
+          HEAD_REF: ${{ github.head_ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          git show FETCH_HEAD:registry.yaml > "$RUNNER_TEMP/base-registry.yaml"
+          git diff --name-only FETCH_HEAD HEAD > "$RUNNER_TEMP/changed-files.txt"
+          node scripts/ci/check.mjs --base "$RUNNER_TEMP/base-registry.yaml" --head registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt"
+
+      - name: Workflow and tooling tests
+        run: npm test
+
       - name: Post validation summary comment
         if: always()
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             const outcome = '${{ job.status }}';
@@ -171,7 +194,7 @@ jobs:
 
             const body = `## ${icon} Registry Validation ${outcome === 'success' ? 'Passed' : 'Failed'}
 
-            ${outcome !== 'success' ? '**One or more validation checks failed.** See the workflow run for details.\n\nCommon issues:\n- Schema validation error: check required fields and field formats\n- Duplicate name: each entry must have a unique `name`\n- Security check: `http` transport must use HTTPS; `stdio` commands must not pipe to shell\n- OAuth check: `oauth_config` URLs must use https and `client_id_env` must end in `_CLIENT_ID`' : 'All checks passed:\n- ✅ JSON Schema validation\n- ✅ No duplicate entry names\n- ✅ Security pattern checks\n- ✅ OAuth config checks'}`;
+            ${outcome !== 'success' ? '**One or more validation checks failed.** See the workflow run for details.\n\nCommon issues:\n- Schema validation error: check required fields and field formats\n- Duplicate name: each entry must have a unique `name`\n- Security check: `http` transport must use HTTPS; `stdio` commands must not pipe to shell\n- OAuth check: `oauth_config` URLs must use https and `client_id_env` must end in `_CLIENT_ID`' : 'All checks passed:\n- ✅ JSON Schema validation\n- ✅ No duplicate entry names\n- ✅ Security pattern checks\n- ✅ OAuth config checks\n- ✅ Pin, text and sync-scope policy checks'}`;
 
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
