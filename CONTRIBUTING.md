@@ -79,7 +79,8 @@ Add an `oauth_config`:
 
 ## Version Pinning Requirement
 
-All `stdio` entries that use `npx` **must** pin to a specific package version.
+All `stdio` entries that use `npx` or `uvx` **must** pin to an exact package version
+(`pkg@1.2.3` for npx, `pkg==1.2.3` for uvx; no tags, ranges or wildcards).
 Unpinned `npx` calls fetch the latest package at runtime, which creates a supply
 chain attack vector — a malicious publisher could push a compromised release and
 every new runtime invocation would silently execute it.
@@ -106,6 +107,13 @@ command:
 If your package is not published to the npm registry (e.g., it uses a private
 registry or a different distribution mechanism), note this clearly in your PR
 and the maintainers will evaluate on a case-by-case basis.
+
+CI enforces this on every entry you add or change (and, once the existing
+unpinned entries are fixed, on the whole file). It also rejects new entries with
+`verified: true` and control, zero-width or bidirectional characters in text fields.
+Pull requests from `sync/official-*` branches (the official-registry sync) are held to a
+stricter scope: only `registry.yaml`, only additive `source: official-registry` entries
+or version/pin/integrity edits of such entries.
 
 When a new version of your server is released, open a PR to bump the pinned
 version in `registry.yaml`. The CI validation pipeline will reject entries that

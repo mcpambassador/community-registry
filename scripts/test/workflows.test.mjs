@@ -1,0 +1,59 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import yaml from 'js-yaml';
+
+const dir = new URL('../../.github/workflows/', import.meta.url).pathname;
+const files = fs.readdirSync(dir).filter(f => /\.ya?ml$/.test(f));
+const SHA = /^[^@\s]+@[0-9a-f]{40}$/;
+
+test('there are workflows to lint', () => assert.ok(files.length > 0));
+
+for (const f of files) {
+  const wf = yaml.load(fs.readFileSync(path.join(dir, f), 'utf8'));
+  test(`${f}: hardened (SHA-pinned actions, top-level permissions, no pull_request_target)`, () => {
+    const on = wf.on ?? wf[true];
+    const triggers = typeof on === 'string' ? [on] : Array.isArray(on) ? on : Object.keys(on ?? {});
+    assert.ok(!triggers.includes('pull_request_target'), 'pull_request_target is forbidden (ADR-024)');
+    assert.ok(Object.prototype.hasOwnProperty.call(wf, 'permissions'), 'top-level permissions required');
+    for (const [jobName, job] of Object.entries(wf.jobs ?? {})) {
+      for (const step of job.steps ?? []) {
+        if (!step.uses) continue;
+        assert.match(step.uses, SHA, `${jobName}: "${step.uses}" must be pinned to a full commit SHA`);
+        if (step.uses.startsWith('actions/checkout@')) {
+          assert.equal(step.with?.['persist-credentials'], false, `${jobName}: checkout needs persist-credentials: false`);
+        }
+      }
+    }
+  });
+}
+
+test('validate-registry: policy checker runs from the base ref in its own job, failing closed (B1)', () => {
+  const wf = yaml.load(fs.readFileSync(path.join(dir, 'validate-registry.yml'), 'utf8'));
+  const job = wf.jobs['policy-checks'];
+  assert.ok(job, 'policy-checks job exists');
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  const base = job.steps.find(s => s.uses?.startsWith('actions/checkout@') && s.with?.path === 'base');
+  assert.ok(base, 'checkout with path: base');
+  assert.equal(base.with.ref, '${{ github.event.pull_request.base.sha }}');
+  assert.equal(base.with['persist-credentials'], false);
+  const head = job.steps.find(s => s.uses?.startsWith('actions/checkout@') && s.with?.path === 'head');
+  assert.ok(head && head.with['persist-credentials'] === false, 'head checkout is data-only');
+  const policy = job.steps.find(s => /check\.mjs/.test(s.run ?? ''));
+  const run = policy.run;
+  // base checker preferred; PR-supplied checker only when the PR adds it; otherwise hard failure
+  assert.match(run, /if \[ -f base\/scripts\/ci\/check\.mjs \]/);
+  assert.match(run, /--diff-filter=A[^\n]*\| grep -qx scripts\/ci\/check\.mjs/);
+  assert.match(run, /::error::[\s\S]*exit 1/);
+  assert.match(run, /::warning::/);
+  assert.match(run, /node "\$CHECKER_DIR\/scripts\/ci\/check\.mjs"/);
+  // the head's dependencies are installed only in the bootstrap branch
+  assert.equal((run.match(/cd head && npm ci/g) ?? []).length, 1);
+  assert.ok(run.indexOf('cd base && npm ci') < run.indexOf('cd head && npm ci'));
+  // no other job runs the checker from the head
+  for (const [n, j] of Object.entries(wf.jobs)) {
+    if (n === 'policy-checks') continue;
+    for (const st of j.steps ?? []) assert.doesNotMatch(st.run ?? '', /scripts\/ci\/check\.mjs/, `${n} must not run the checker`);
+  }
+});
