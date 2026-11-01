@@ -118,7 +118,11 @@ export async function fetchAll({
     try {
       res = await getJson(url, { fetchImpl, timeoutMs: Math.min(LIMITS.timeoutMs, remaining) });
     } catch (e) {
-      if (nowImpl() - started >= budgetMs) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended (${e.message})`);
+      // The clamped per-request signal can fire a millisecond before the clock check sees the budget spent: if the
+      // request was aborted and the clamp was the binding limit, that IS the budget running out.
+      const aborted = e?.name === 'TimeoutError' || e?.name === 'AbortError' || /abort|timed? ?out/i.test(String(e?.message));
+      const clamped = remaining < LIMITS.timeoutMs;
+      if (nowImpl() - started >= budgetMs || (clamped && aborted)) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended (${e.message})`);
       throw e;
     }
     const { status, json, bytes } = res;

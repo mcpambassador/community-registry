@@ -124,3 +124,14 @@ test('byte counting uses real bytes, not string length (multibyte text)', async 
   assert.equal(r.bytes, Buffer.byteLength(body));
   assert.ok(r.bytes > body.length);
 });
+
+test('budget race: a clamped request aborted just before the clock reaches the budget reports the time budget', async () => {
+  const frozen = () => 0; // the clock never reaches the budget, as when the abort fires ~1 ms early
+  for (const make of [() => new DOMException('The operation was aborted due to timeout', 'TimeoutError'), () => new Error('aborted')]) {
+    await assert.rejects(fetchAll({ budgetMs: 1000, nowImpl: frozen, fetchImpl: async () => { throw make(); } }), /time budget \(1s\) exhausted.*\(/);
+  }
+  // not clamped (plenty of budget left): an abort/timeout is the request's own failure and is surfaced as is
+  await assert.rejects(fetchAll({ budgetMs: 10 * 60_000, nowImpl: frozen, fetchImpl: async () => { throw new Error('aborted'); } }), /^Error: aborted$/);
+  // a clamped request failing for another reason is not mislabelled
+  await assert.rejects(fetchAll({ budgetMs: 1000, nowImpl: frozen, fetchImpl: async () => new Response('x', { status: 500 }) }), /HTTP 500/);
+});
