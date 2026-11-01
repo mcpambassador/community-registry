@@ -144,7 +144,7 @@ jobs:
             const oc = mcp.oauth_config;
             if (!oc) continue;
             for (const key of ['auth_url', 'token_url', 'revocation_url']) {
-              if (oc[key] !== undefined && !/^https:\/\//i.test(String(oc[key]))) {
+              if (oc[key] !== undefined && !/^https:\/\//.test(String(oc[key]))) {
                 errors.push(`[${mcp.name}] oauth_config.${key} must use https`);
               }
             }
