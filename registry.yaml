@@ -561,7 +561,7 @@ mcps:
   config:
     command:
     - uvx
-    - couchbase-mcp-server
+    - couchbase-mcp-server==1.0.1.post1
     env_vars:
     - name: CB_PASSWORD
       description: Password for the Couchbase cluster with access to the bucket.
@@ -616,6 +616,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 4d4d0403979b33de6808b0c7470ea63e0c555d08814abfaa4821c7e3598f3166
+    - bbbdb3fbb459736d19f810db275427039cffe984701155b6203d436b6bbe7a33
 - name: database-server
   display_name: MCP Database Server
   description: Comprehensive database server supporting PostgreSQL, MySQL, and SQLite
@@ -626,7 +630,7 @@ mcps:
   config:
     command:
     - uvx
-    - mcp-db-server
+    - mcp-db-server==0.1.3
     env_vars:
     - name: database_url
       description: 'Connection string for your database. Examples: SQLite: sqlite+aiosqlite:///data/mydb.db,
@@ -660,6 +664,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 49fd9cd9e293db21641e81d769864b632fd78f4e6b266c54483fe744d3cce9d3
+    - e3d50a62725c79cf46c4030ef4c434201940fc2b797fe9cdd3d5069d90454aff
 - name: descope
   display_name: Descope
   description: The Descope Model Context Protocol (MCP) server provides an interface
@@ -670,7 +678,7 @@ mcps:
   config:
     command:
     - uvx
-    - descope-mcp
+    - descope-mcp==0.1.0
     env_vars:
     - name: DESCOPE_MANAGEMENT_KEY
       description: Descope Management Key
@@ -701,6 +709,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 0af5d750ebea795acd04bbd77e4d8cfab3b1000584ad1ce089e3f36dd3c19545
+    - 167708e947074a2a20acc9bb5e03d0aa8ce788a0ea8128d202661eb9bb4772bd
 - name: docker
   display_name: Docker
   description: Manage Docker containers, images, volumes, and networks. List, start,
@@ -899,7 +911,7 @@ mcps:
   config:
     command:
     - uvx
-    - explorium-mcp-server
+    - explorium-mcp-server==0.2.11
     env_vars:
     - name: API_ACCESS_TOKEN
       description: Api Access Token
@@ -929,6 +941,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - d1f138d66f74427f3d5e8b1fdad9b185319472a7d4c190fcdcadf32a7eaa4d29
+    - f6258f5c79dbba28b5dc7088240d5d0b517fa94b26ceb91e893679cc38d47d5f
 - name: fetch
   display_name: Fetch
   description: Fetch and convert web content to markdown. Retrieve any URL and get
@@ -937,7 +953,7 @@ mcps:
   config:
     command:
     - uvx
-    - mcp-server-fetch
+    - mcp-server-fetch==2026.10.28
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -952,6 +968,10 @@ mcps:
   version: 1.0.0
   maintainer: MCP Project
   verified: true
+  package_integrity:
+    pypi:
+    - 03224d3f31d964504a83e31697608fe800fe541b6b626a419f9efcfbdfd87981
+    - b339038f5942ce9a2b067f8e9466447c88433296ba2589321bec20d533a4d2c5
 - name: figma
   display_name: Figma
   description: Read Figma design files. Inspect components, extract design tokens,
@@ -1134,7 +1154,7 @@ mcps:
   config:
     command:
     - uvx
-    - github-mcp-server
+    - github-mcp-server==2.5.7
     env_vars:
     - name: GITHUB_PERSONAL_ACCESS_TOKEN
       description: You can create a GitHub personal access token [on GitHub](https://github.com/settings/personal-access-tokens/new)
@@ -1159,6 +1179,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 282e83ffe19526cb064fbacb15efc794e056dd2ada30b1ab206728973fb9e62c
+    - 79c7657f63ad302c66cade3d34f4d3c9b6b791736e8b217ab801912d34b093be
 - name: gitlab
   display_name: GitLab
   description: Interact with GitLab repositories, issues, merge requests, and CI/CD
@@ -1204,7 +1228,7 @@ mcps:
   config:
     command:
     - uvx
-    - Gmail-MCP
+    - Gmail-MCP==0.1.3
     env_vars:
     - name: EMAIL_PASSWORD
       description: Email Password
@@ -1239,6 +1263,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 3e069de8e2b6957e38e52d67f23f967c04e4fc2901e9595b43fd6e449d43849a
+    - 967e622f7c09460316783c66361dd569c3ffb2857427fb959b72772727b06f12
 - name: google-maps
   display_name: Google Maps
   description: Access Google Maps services. Geocode addresses, calculate directions,
@@ -1323,7 +1351,7 @@ mcps:
   config:
     command:
     - uvx
-    - kubectl-mcp-server
+    - kubectl-mcp-server==2.0.0
     env_vars:
     - name: kubeconfig
       description: Kubeconfig
@@ -1349,6 +1377,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 379a16ef8ced39ba9071df5bd639acbb80ff304a77f6a9df351221477041aa14
+    - 78e925950a6c6e50d3cc36d8c7033b56d71be9f28c5e6ad8920d53c1bfc4eab1
 - name: kubernetes
   display_name: Kubernetes
   description: Connect to a Kubernetes cluster and manage it
@@ -1445,7 +1477,7 @@ mcps:
   config:
     command:
     - uvx
-    - markdownify-mcp-server
+    - markdownify-mcp-server==0.1.13
     env_vars:
     - name: paths
       description: Paths
@@ -1477,6 +1509,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - c711f182766aeb8deebdd769362cfd51b4faefa8544fe93e8e00a7675cc85cfe
+    - e3664a317dcf4267771d8031f2338a6636df411f0f8fc002d269fba82d8a8fb4
 - name: markitdown
   display_name: MarkItDown
   description: Convert various document formats (PDF, DOCX, PPTX, HTML, images) to
@@ -1507,7 +1543,7 @@ mcps:
   config:
     command:
     - uvx
-    - mcp-discord
+    - mcp-discord==0.1.0
     env_vars:
     - name: DISCORD_TOKEN
       description: You can obtain a token from the [Discord Developer Portal](https://discord.com/developers/applications)
@@ -1532,6 +1568,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 45166b0f1efad1fe4c94c4870d2c95664bbc5e18da2f2603e57558852dabadb3
+    - f3cc68016a2a2ef02b45fd4e9720ff2f60c2570265af5543ad810cb920b9b373
 - name: mcp-reddit
   display_name: Reddit
   description: This server provides AI agents with tools to fetch, post and search
@@ -1541,7 +1581,7 @@ mcps:
   config:
     command:
     - uvx
-    - mcp-reddit
+    - mcp-reddit==0.4.0
     env_vars:
     - name: REDDIT_CLIENT_ID
       description: Reddit Client Id
@@ -1584,6 +1624,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 3ca096aad918c1dd905b0d23469e65637dac73c3080be66de436ced26ef6a6ae
+    - 613638be190def2f67b24543034cc7d6550cdc90b159cfb6e3c543d4484723f4
 - name: memory
   display_name: Memory
   description: Persistent memory using a local knowledge graph. Store, retrieve, and
@@ -1951,7 +1995,7 @@ mcps:
   config:
     command:
     - uvx
-    - oxylabs-mcp
+    - oxylabs-mcp==0.10.2
     env_vars:
     - name: OXYLABS_PASSWORD
       description: Oxylabs Password
@@ -1982,6 +2026,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 20643442aae50448f1e53d3c7dffdcc588ffc3d6185d90148dd1cbacee1ecf79
+    - 4c108a53d318bf345cf625fd3177453c3d917fee1cb34dd136b2757c6089ab80
 - name: playwright
   display_name: Playwright
   description: Browser automation and testing with Playwright. Navigate pages, interact
@@ -2587,7 +2635,7 @@ mcps:
   config:
     command:
     - uvx
-    - mcp-server-sqlite
+    - mcp-server-sqlite==2025.4.25
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -2601,6 +2649,10 @@ mcps:
   maintainer: MCP Project
   verified: true
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 5ba5706aa29d249a3cde8226577e021c07792d3198e9db40fd005578d2a0801d
+    - 5c396211adb90595d06a505ac836657fc76ee4439e132acdf65caf21b4a8de42
 - name: stackhawk
   display_name: StackHawk
   description: A Model Context Protocol (MCP) server for integrating with StackHawk's
@@ -2611,7 +2663,7 @@ mcps:
   config:
     command:
     - uvx
-    - stackhawk-mcp
+    - stackhawk-mcp==1.2.4
     env_vars:
     - name: STACKHAWK_API_KEY
       description: Stackhawk Api Key
@@ -2636,6 +2688,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 20bc070a16c8d7c3dbf5c682809196c3d2d6912880674abe73ed52320103eb3a
+    - 2e139f7cc181784e2288e2d99ff51cd742c3a585f4d7ce4c042102472ff47fb2
 - name: stripe
   display_name: Stripe
   description: Interact with Stripe's API. Create charges, manage customers, handle
@@ -2774,7 +2830,7 @@ mcps:
   config:
     command:
     - uvx
-    - temporal-mcp-server
+    - temporal-mcp-server==1.12.0
     env_vars:
     - name: temporal_host
       description: Temporal host
@@ -2810,6 +2866,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - cbd5f00c557b882b4f2e47b8cb821084cf657cac00b7f6ee9a68aa4c653dd75a
+    - fdd55ee4e782a63e259d011b610cf3c9dcd14be7603a1f4bf9c70ff235fade3f
 - name: text-to-graphql
   display_name: Text-to-GraphQL
   description: Transform natural language queries into GraphQL queries using an AI
@@ -2819,7 +2879,7 @@ mcps:
   config:
     command:
     - uvx
-    - text-to-graphql-mcp
+    - text-to-graphql-mcp==0.1.3
     env_vars:
     - name: GRAPHQL_API_KEY
       description: API key for your GraphQL service
@@ -2884,6 +2944,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - b3830c314b192aae4f343ac81188346812f2afd88bbd6573495402fa64cd3718
+    - ee9dc45fb81b1179c95c949134b7d68dfcd22037ea4010e9ddee1d881ae09b54
 - name: time
   display_name: Time
   description: Get current time in any timezone and convert between timezones. Simple
@@ -2947,7 +3011,7 @@ mcps:
   config:
     command:
     - uvx
-    - mcp-youtube-transcript
+    - mcp-youtube-transcript==0.3.5
   auth_type: none
   requires_user_credentials: false
   isolation_mode: shared
@@ -2959,3 +3023,7 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 5ca9256abdc326e1b9130fbbfb8f58226358a065ad0a43b87608e2407904c99e
+    - 7eff1fca8eb8c26998f3f80397b49617075823329d08190fc2ce507c46b88980
