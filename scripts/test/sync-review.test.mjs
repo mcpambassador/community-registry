@@ -127,9 +127,11 @@ test('byte counting uses real bytes, not string length (multibyte text)', async 
 
 test('budget race: a clamped request aborted just before the clock reaches the budget reports the time budget', async () => {
   const frozen = () => 0; // the clock never reaches the budget, as when the abort fires ~1 ms early
-  for (const make of [() => new DOMException('The operation was aborted due to timeout', 'TimeoutError'), () => new Error('aborted')]) {
+  for (const make of [() => new DOMException('The operation was aborted due to timeout', 'TimeoutError'), () => new DOMException('aborted', 'AbortError')]) {
     await assert.rejects(fetchAll({ budgetMs: 1000, nowImpl: frozen, fetchImpl: async () => { throw make(); } }), /time budget \(1s\) exhausted.*\(/);
   }
+  // a plain Error that merely says 'aborted' is not an abort (TD-057)
+  await assert.rejects(fetchAll({ budgetMs: 1000, nowImpl: frozen, fetchImpl: async () => { throw new Error('aborted'); } }), /^Error: aborted$/);
   // not clamped (plenty of budget left): an abort/timeout is the request's own failure and is surfaced as is
   await assert.rejects(fetchAll({ budgetMs: 10 * 60_000, nowImpl: frozen, fetchImpl: async () => { throw new Error('aborted'); } }), /^Error: aborted$/);
   // a clamped request failing for another reason is not mislabelled

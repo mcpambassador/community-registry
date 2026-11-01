@@ -14,6 +14,7 @@ import { evaluate, cheapDrop, publisherTier, publisherKey, OFFICIAL_META_KEY } f
 import { lookupCandidate } from './index-lookup.mjs';
 import { buildEntry } from './map.mjs';
 import { renderPrBody } from './pr-body.mjs';
+import { githubRepoOf, fetchRepoMeta, scoreRepo } from './repo-meta.mjs';
 
 const here = new URL('.', import.meta.url);
 const readJson = f => JSON.parse(fs.readFileSync(new URL(f, here), 'utf8'));
@@ -60,7 +61,7 @@ export function buildContext({ registryText, deny, top }) {
 /** Pure-ish core: injectable rows source, lookups and validator. Returns the artifact contents. */
 export async function runSync({
   registryText, rows, rawRows, skipped = [], skippedCount, dropped = {}, pages = 1, max = 10, maxPerPublisher = 2, now, lookup = lookupCandidate, validate, deny, top,
-  dryRun = true, watermark, maxLookups = max * 5, lookupBudgetMs = 4 * 60_000, nowImpl = Date.now,
+  dryRun = true, watermark, repoMeta, maxLookups = max * 5, lookupBudgetMs = 4 * 60_000, nowImpl = Date.now,
 }) {
   const ctx = buildContext({ registryText, deny, top });
   const { takenSlugs } = ctx;
@@ -85,10 +86,38 @@ export async function runSync({
   const tierCounts = { 1: 0, 2: 0 };
   for (const q of queue) tierCounts[q.tier]++;
   queue.sort((a, b) => a.tier - b.tier); // stable: keeps the newest-first order inside each tier
+  // FB-036: repository quality signal for the top lookup set only (the first maxLookups queue entries), bounded by the
+  // lookup budget. Archived/stale repos are rejected, unreachable ones deferred; the rest rank by score inside their tier.
+  const repoStats = { checked: 0, archived: 0, stale: 0, unavailable: 0, rateLimited: false };
+  const metaOf = new Map();
+  let ranked = queue;
+  if (repoMeta) {
+    const window = queue.slice(0, maxLookups);
+    const kept = [];
+    for (const q of window) {
+      const repo = githubRepoOf(q.row.server.repository?.url);
+      if (!repo) { kept.push(q); continue; }
+      let r = { error: 'unavailable' };
+      if (!repoStats.rateLimited && nowImpl() - lookupStart <= lookupBudgetMs / 2) {
+        repoStats.checked++;
+        r = await repoMeta(repo.owner, repo.repo);
+        if (r.error === 'rate-limited') repoStats.rateLimited = true;
+      }
+      if (!r.meta) { repoStats.unavailable++; deferred++; continue; }
+      const sc = scoreRepo(r.meta, nowMs);
+      if (sc.reject) { repoStats[sc.reject === 'repo-archived' ? 'archived' : 'stale']++; rejected.push({ name: q.row.server.name, reason: sc.reject }); continue; }
+      q.score = sc.score;
+      metaOf.set(q.row, r.meta);
+      kept.push(q);
+    }
+    // Scored first (best score first), unscored after; stable sort keeps newest-first for ties. Tier still dominates.
+    kept.sort((a, b) => a.tier - b.tier || (b.score ?? -1) - (a.score ?? -1));
+    ranked = [...kept, ...queue.slice(maxLookups)];
+  }
   const perPublisher = new Map();
   const acceptedTiers = { 1: 0, 2: 0 };
   let cappedByPublisher = 0;
-  for (const { row, tier } of queue) {
+  for (const { row, tier } of ranked) {
     const name = row.server.name;
     if (accepted.length >= max || lookups >= maxLookups) { deferred++; continue; }
     // Re-evaluate: slugs taken by entries accepted earlier in this run change the outcome.
@@ -109,9 +138,9 @@ export async function runSync({
     ctx.knownSlugs.add(built.entry.name);
     perPublisher.set(ns, (perPublisher.get(ns) ?? 0) + 1);
     acceptedTiers[tier]++;
-    accepted.push({ entry: built.entry, plan: v.plan, tier });
+    accepted.push({ entry: built.entry, plan: v.plan, tier, repo: metaOf.get(row) });
   }
-  const scope = { tierCounts, acceptedTiers, cappedByPublisher, maxPerPublisher, publishers: perPublisher.size };
+  const scope = { tierCounts, acceptedTiers, cappedByPublisher, maxPerPublisher, publishers: perPublisher.size, repoStats: repoMeta ? repoStats : undefined };
 
   let text = registryText.endsWith('\n') ? registryText : registryText + '\n';
   if (accepted.length) text += yaml.dump(accepted.map(a => a.entry), { lineWidth: 100, noRefs: true, noArrayIndent: true });
@@ -145,6 +174,8 @@ async function main() {
   const res = await runSync({
     registryText, ...feed, max, maxPerPublisher, watermark, now, validate: makeValidator(),
     deny, top, dryRun: process.argv.includes('--dry-run'),
+    // Offline runs (--rows-file) never call GitHub. GITHUB_TOKEN is optional and read-only; it is only ever sent to api.github.com.
+    repoMeta: arg('--rows-file') ? undefined : (owner, repo) => fetchRepoMeta(owner, repo, { token: process.env.GITHUB_TOKEN }),
   });
   const byReason = {};
   for (const r of res.rejected) byReason[r.reason] = (byReason[r.reason] ?? 0) + 1;
@@ -153,6 +184,7 @@ async function main() {
   const cheapN = Object.values(feed.dropped ?? {}).reduce((a, b) => a + b, 0);
   console.error(`funnel: ${feed.rawRows ?? feed.rows.length} raw rows − ${skippedN} skipped (unknown $schema/malformed) − ${cheapN} cheap-dropped = ${feed.rows.length} kept → ${res.eligible} eligible candidates (before --max ${max}) → ${res.accepted.length} proposed; ${res.lookups} lookups`);
   console.error(`tiers: eligible ${res.scope.tierCounts[1]} github-or-host-matched / ${res.scope.tierCounts[2]} other; proposed ${res.scope.acceptedTiers[1]} / ${res.scope.acceptedTiers[2]}; ${res.scope.publishers} publishers, cap ${maxPerPublisher} each held back ${res.scope.cappedByPublisher}`);
+  if (res.scope.repoStats) { const r = res.scope.repoStats; console.error(`repo-meta: ${r.checked} checked, ${r.archived} archived, ${r.stale} stale (no push in 12 months), ${r.unavailable} unavailable/deferred${r.rateLimited ? ' (GitHub rate limit hit)' : ''}`); }
   console.error(`cheap-dropped by reason: ${JSON.stringify(sortDesc(feed.dropped ?? {}))}`);
   console.error(`rejected by reason: ${JSON.stringify(sortDesc(byReason))}`);
   console.error(`heapUsed: ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`);

@@ -37,7 +37,7 @@ test('bounds: a request that hangs is aborted by the remaining budget, not the 1
   try {
     await assert.rejects(fetchAll({
       budgetMs: 200,
-      fetchImpl: (u, o) => new Promise((_, rej) => { seenSignal = o.signal; o.signal.addEventListener('abort', () => rej(new Error('aborted'))); }),
+      fetchImpl: (u, o) => new Promise((_, rej) => { seenSignal = o.signal; o.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))); }),
     }), /time budget/);
   } finally { clearInterval(keepAlive); }
   assert.ok(Date.now() - t0 < 2000, `took ${Date.now() - t0}ms`);
@@ -54,7 +54,7 @@ test('bounds: per-request timeout never exceeds the remaining budget (later requ
       budgetMs: 1000, nowImpl: () => t,
       fetchImpl: (u, o) => {
         if (calls++ === 0) { t = 950; return Promise.resolve(jsonRes(page(['io.github.a/z'], 'z1'))); } // 50ms of budget left
-        return new Promise((_, rej) => o.signal.addEventListener('abort', () => rej(new Error('aborted'))));
+        return new Promise((_, rej) => o.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))));
       },
     }), /aborted|time budget/);
   } finally { clearInterval(keepAlive); }
@@ -109,4 +109,22 @@ test('cheapDrop with the reduced context sync.mjs passes (no slug state) agrees 
       if (evaluate(r, full).ok) assert.equal(cd.ok, true, r.server.name);
     }
   }
+});
+
+test('bounds (TD-057): only AbortError/TimeoutError near the budget is relabelled; a message that merely says "timed out" is not', async () => {
+  const run = err => {
+    let t = 0;
+    let calls = 0;
+    return fetchAll({
+      budgetMs: 1000, nowImpl: () => t,
+      fetchImpl: async () => {
+        if (calls++ === 0) { t = 950; return jsonRes(page(['io.github.a/z'], 'z1')); } // 50ms left, so the per-request clamp binds
+        throw err;
+      },
+    });
+  };
+  await assert.rejects(run(Object.assign(new Error('connect ETIMEDOUT 1.2.3.4:443'), { code: 'ETIMEDOUT' })), e => /ETIMEDOUT/.test(e.message) && !/time budget/.test(e.message));
+  await assert.rejects(run(new SyntaxError('Unexpected token in JSON: "request timed out, aborted"')), e => e instanceof SyntaxError);
+  await assert.rejects(run(new DOMException('aborted', 'AbortError')), /time budget/);
+  await assert.rejects(run(new DOMException('signal timed out', 'TimeoutError')), /time budget/);
 });

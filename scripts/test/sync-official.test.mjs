@@ -192,7 +192,7 @@ test('getJson: oversized body aborted at the cap, declared and streamed', async 
 
 test('getJson: timeout, HTTP errors, redirects, depth', async () => {
   const keepAlive = setInterval(() => {}, 10); // AbortSignal.timeout timers are unref'd; a real socket keeps the loop alive
-  await assert.rejects(getJson('https://x.example/', { fetchImpl: (u, o) => new Promise((_, rej) => o.signal.addEventListener('abort', () => rej(new Error('aborted')))), timeoutMs: 20 }), /aborted/);
+  await assert.rejects(getJson('https://x.example/', { fetchImpl: (u, o) => new Promise((_, rej) => o.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError')))), timeoutMs: 20 }), /aborted/);
   clearInterval(keepAlive);
   await assert.rejects(getJson('https://x.example/', { fetchImpl: async () => new Response('', { status: 500 }) }), /HTTP 500/);
   assert.deepEqual(await getJson('https://x.example/', { fetchImpl: async () => new Response('', { status: 404 }) }), { status: 404 });
