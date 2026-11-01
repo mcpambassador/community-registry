@@ -168,34 +168,6 @@ jobs:
           console.log('OAuth config checks passed.');
           EOF
 
-      # B1: the policy checker is the gate, so it must not come from the PR it is judging.
-      # Check out the BASE commit (trusted, already reviewed) and run its scripts/ci from there;
-      # only the registry files under test are read from the PR head.
-      - name: Check out base ref (trusted policy checker)
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          ref: ${{ github.event.pull_request.base.sha }}
-          path: base
-          persist-credentials: false
-
-      - name: Registry policy checks (pins, runner guard, text lint, verified, sync diff-scope)
-        env:
-          # passed via env, never interpolated into the script
-          HEAD_REF: ${{ github.head_ref }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
-          BASE_REF: ${{ github.base_ref }}
-        run: |
-          if [ ! -f base/scripts/ci/check.mjs ]; then
-            # Bootstrap only: the base ref predates the checker (it is being introduced by this PR).
-            echo "::warning::base ref has no scripts/ci/check.mjs; policy checks skipped (bootstrap)"
-            exit 0
-          fi
-          (cd base && npm ci --ignore-scripts --no-audit --no-fund)
-          git fetch --no-tags --depth=1 origin "$BASE_REF"
-          git diff --name-only FETCH_HEAD HEAD > "$RUNNER_TEMP/changed-files.txt"
-          node base/scripts/ci/check.mjs --base base/registry.yaml --head registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
-
       - name: Workflow and tooling tests
         run: npm test
 
@@ -233,3 +205,56 @@ jobs:
                 body
               });
             }
+
+  # B1: the policy checker is the gate, so it must not come from the PR it is judging, and it runs
+  # in its own job that never installs the PR head's dependencies (a hostile lockfile/script could
+  # otherwise shadow `node` via $GITHUB_PATH). The BASE commit's scripts/ci and lockfile are used;
+  # the PR head is only read as data (registry.yaml, file list).
+  policy-checks:
+    name: Registry policy checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out base ref (trusted policy checker)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
+      - name: Check out PR head (data only)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: head
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Registry policy checks (pins, runner guard, text lint, verified, sync diff-scope)
+        env:
+          # passed via env, never interpolated into the script
+          HEAD_REF: ${{ github.head_ref }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          git -C head fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git -C head diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-files.txt"
+          if [ -f base/scripts/ci/check.mjs ]; then
+            CHECKER_DIR=base
+            (cd base && npm ci --ignore-scripts --no-audit --no-fund)
+          elif git -C head diff --diff-filter=A --name-only "$BASE_SHA" HEAD | grep -qx scripts/ci/check.mjs; then
+            # Bootstrap: this PR itself introduces the checker, so the base has none to trust.
+            echo "::warning::base has no scripts/ci/check.mjs and this PR adds it; running the PR's own checker (bootstrap only)"
+            CHECKER_DIR=head
+            (cd head && npm ci --ignore-scripts --no-audit --no-fund)
+          else
+            echo "::error::base has no scripts/ci/check.mjs and this PR does not add it; refusing to skip policy checks"
+            exit 1
+          fi
+          node "$CHECKER_DIR/scripts/ci/check.mjs" --base base/registry.yaml --head head/registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins

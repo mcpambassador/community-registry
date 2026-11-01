@@ -120,3 +120,28 @@ test('runner guard (TD-043): runner-changing flags and reserved env names are re
   assert.equal(run({ credential_schema: { properties: { LD_PRELOAD: { type: 'string' } } } }).length, 1);
   assert.deepEqual(run(withEnv({ NODE_ENV: 'production' })), []);
 });
+
+test('credential_schema may not bind an env var that config.env fixes (TD-049)', () => {
+  const alpaca = (schemaProps, env) => entry({
+    config: { command: ['uvx', 'alpaca-mcp-server==2.4.0'], env },
+    credential_schema: { type: 'object', properties: schemaProps },
+  });
+  const base = [];
+  const ok = alpaca(
+    { ALPACA_API_KEY: { type: 'string', env_var: 'ALPACA_API_KEY' } },
+    { ALPACA_PAPER_TRADE: 'true' }
+  );
+  assert.deepEqual(universalChecks({ baseMcps: base, headMcps: [ok] }), []);
+  // by key, by env_var, and case-insensitively
+  for (const props of [
+    { ALPACA_PAPER_TRADE: { type: 'string' } },
+    { PAPER: { type: 'string', env_var: 'ALPACA_PAPER_TRADE' } },
+    { alpaca_paper_trade: { type: 'string' } },
+  ]) {
+    const errs = universalChecks({ baseMcps: base, headMcps: [alpaca(props, { ALPACA_PAPER_TRADE: 'true' })] });
+    assert.ok(errs.some(e => /config\.env fixes/.test(e)), JSON.stringify(props));
+  }
+  // `KEY: ${KEY}` is a same-name placeholder, not a fixed value
+  const placeholder = alpaca({ TOKEN: { type: 'string' } }, { TOKEN: '${TOKEN}' });
+  assert.deepEqual(universalChecks({ baseMcps: base, headMcps: [placeholder] }), []);
+});
