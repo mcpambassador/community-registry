@@ -1,7 +1,7 @@
 // Pure registry checks shared by CI (scripts/ci/check.mjs) and the official-registry sync.
 // No I/O and no network in this file. ADR-024.
 
-import { checkCatalogEntry } from '../vendor/runner-guard.mjs';
+import { checkCatalogEntry, credentialEnvNames } from '../vendor/runner-guard.mjs';
 
 export const SYNC_BRANCH_PREFIX = 'sync/official-';
 
@@ -86,6 +86,28 @@ export function changedEntries(baseMcps, headMcps) {
  * Universal checks (every PR). `allPins` enforces the pin rule on the whole registry (set once TD-018 is done);
  * otherwise it applies to added and changed entries.
  */
+/**
+ * TD-049 (CI half): a credential field must not bind an env var that config.env fixes. The server
+ * lets the fixed value win, but a catalog that offers the field anyway misleads admins and users.
+ * `KEY: ${KEY}` (same-name placeholder) is not a fixed value. Names are compared case-insensitively.
+ */
+export function fixedEnvCollision(m) {
+  const env = m.config?.env;
+  if (!env || typeof env !== 'object' || Array.isArray(env)) return null;
+  const fixed = new Set(
+    Object.entries(env)
+      .filter(([k, v]) => String(v) !== '${' + k + '}')
+      .map(([k]) => k.toLowerCase())
+  );
+  if (fixed.size === 0) return null;
+  for (const name of credentialEnvNames(m.credential_schema)) {
+    if (fixed.has(String(name).toLowerCase())) {
+      return `credential_schema binds an environment variable that config.env fixes: ${String(name).replace(/[^A-Za-z0-9_.-]/g, '?').slice(0, 64)}`;
+    }
+  }
+  return null;
+}
+
 export function universalChecks({ baseMcps, headMcps, allPins = false }) {
   const errors = [];
   const { added, changed } = changedEntries(baseMcps, headMcps);
@@ -100,6 +122,8 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
       oauth_access_token_env_var: m.oauth_config?.access_token_env_var,
     });
     if (bad) errors.push(`[${m.name}] ${bad}`);
+    const clash = fixedEnvCollision(m);
+    if (clash) errors.push(`[${m.name}] ${clash}`);
   }
   for (const m of added) {
     if (m.verified === true) errors.push(`[${m.name}] a new entry cannot be added with verified: true`);
