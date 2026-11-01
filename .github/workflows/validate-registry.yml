@@ -131,6 +131,36 @@ jobs:
           console.log('Security checks passed.');
           EOF
 
+      - name: OAuth config checks (TD-031)
+        run: |
+          node << 'EOF'
+          const fs = require('fs');
+          const yaml = require('js-yaml');
+          const registry = yaml.load(fs.readFileSync('registry.yaml', 'utf8'));
+          const errors = [];
+          const CLIENT_ID = /^[A-Z][A-Z0-9_]*_CLIENT_ID$/;
+
+          for (const mcp of registry.mcps) {
+            const oc = mcp.oauth_config;
+            if (!oc) continue;
+            for (const key of ['auth_url', 'token_url', 'revocation_url']) {
+              if (oc[key] !== undefined && !/^https:\/\//i.test(String(oc[key]))) {
+                errors.push(`[${mcp.name}] oauth_config.${key} must use https`);
+              }
+            }
+            if (oc.client_id_env !== undefined && !CLIENT_ID.test(String(oc.client_id_env))) {
+              errors.push(`[${mcp.name}] oauth_config.client_id_env must match ${CLIENT_ID} (ending in _CLIENT_ID)`);
+            }
+          }
+
+          if (errors.length > 0) {
+            console.error('OAuth config check FAILED:');
+            errors.forEach(e => console.error(' ', e));
+            process.exit(1);
+          }
+          console.log('OAuth config checks passed.');
+          EOF
+
       - name: Post validation summary comment
         if: always()
         uses: actions/github-script@v7
@@ -141,7 +171,7 @@ jobs:
 
             const body = `## ${icon} Registry Validation ${outcome === 'success' ? 'Passed' : 'Failed'}
 
-            ${outcome !== 'success' ? '**One or more validation checks failed.** See the workflow run for details.\n\nCommon issues:\n- Schema validation error: check required fields and field formats\n- Duplicate name: each entry must have a unique `name`\n- Security check: `http` transport must use HTTPS; `stdio` commands must not pipe to shell' : 'All checks passed:\n- ✅ JSON Schema validation\n- ✅ No duplicate entry names\n- ✅ Security pattern checks'}`;
+            ${outcome !== 'success' ? '**One or more validation checks failed.** See the workflow run for details.\n\nCommon issues:\n- Schema validation error: check required fields and field formats\n- Duplicate name: each entry must have a unique `name`\n- Security check: `http` transport must use HTTPS; `stdio` commands must not pipe to shell\n- OAuth check: `oauth_config` URLs must use https and `client_id_env` must end in `_CLIENT_ID`' : 'All checks passed:\n- ✅ JSON Schema validation\n- ✅ No duplicate entry names\n- ✅ Security pattern checks\n- ✅ OAuth config checks'}`;
 
             const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
