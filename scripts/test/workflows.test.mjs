@@ -28,3 +28,16 @@ for (const f of files) {
     }
   });
 }
+
+test('validate-registry: the policy checker runs from the base ref, not the PR head (B1)', () => {
+  const wf = yaml.load(fs.readFileSync(path.join(dir, 'validate-registry.yml'), 'utf8'));
+  const steps = Object.values(wf.jobs).flatMap(j => j.steps ?? []);
+  const base = steps.find(s => s.uses?.startsWith('actions/checkout@') && s.with?.path === 'base');
+  assert.ok(base, 'a second checkout with path: base is required');
+  assert.equal(base.with.ref, '${{ github.event.pull_request.base.sha }}');
+  assert.equal(base.with['persist-credentials'], false);
+  const policy = steps.find(s => /scripts\/ci\/check\.mjs/.test(s.run ?? ''));
+  assert.ok(policy, 'policy step exists');
+  assert.match(policy.run, /node base\/scripts\/ci\/check\.mjs/);
+  assert.doesNotMatch(policy.run, /node scripts\/ci\/check\.mjs/);
+});
