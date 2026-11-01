@@ -168,7 +168,17 @@ jobs:
           console.log('OAuth config checks passed.');
           EOF
 
-      - name: Registry policy checks (pins, text lint, verified, sync diff-scope)
+      # B1: the policy checker is the gate, so it must not come from the PR it is judging.
+      # Check out the BASE commit (trusted, already reviewed) and run its scripts/ci from there;
+      # only the registry files under test are read from the PR head.
+      - name: Check out base ref (trusted policy checker)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
+      - name: Registry policy checks (pins, runner guard, text lint, verified, sync diff-scope)
         env:
           # passed via env, never interpolated into the script
           HEAD_REF: ${{ github.head_ref }}
@@ -176,10 +186,15 @@ jobs:
           SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
           BASE_REF: ${{ github.base_ref }}
         run: |
+          if [ ! -f base/scripts/ci/check.mjs ]; then
+            # Bootstrap only: the base ref predates the checker (it is being introduced by this PR).
+            echo "::warning::base ref has no scripts/ci/check.mjs; policy checks skipped (bootstrap)"
+            exit 0
+          fi
+          (cd base && npm ci --ignore-scripts --no-audit --no-fund)
           git fetch --no-tags --depth=1 origin "$BASE_REF"
-          git show FETCH_HEAD:registry.yaml > "$RUNNER_TEMP/base-registry.yaml"
           git diff --name-only FETCH_HEAD HEAD > "$RUNNER_TEMP/changed-files.txt"
-          node scripts/ci/check.mjs --base "$RUNNER_TEMP/base-registry.yaml" --head registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
+          node base/scripts/ci/check.mjs --base base/registry.yaml --head registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
 
       - name: Workflow and tooling tests
         run: npm test
