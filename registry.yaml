@@ -1301,47 +1301,6 @@ mcps:
   maintainer: MCP Project
   verified: true
   version: 1.0.0
-- name: grafana
-  display_name: Grafana
-  description: Query Grafana dashboards and datasources. Search dashboards, run Prometheus/Loki
-    queries, and manage alerts.
-  transport_type: stdio
-  config:
-    # NOTE: not published to npm — cannot pin version
-    command:
-    - npx
-    - -y
-    - '@grafana/mcp-server'
-    env:
-      GRAFANA_URL: ${GRAFANA_URL}
-      GRAFANA_API_KEY: ${GRAFANA_API_KEY}
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    type: object
-    properties:
-      GRAFANA_URL:
-        type: string
-        title: Grafana URL
-        description: Your Grafana instance URL
-      GRAFANA_API_KEY:
-        type: string
-        title: Grafana API Key
-        description: Your Grafana API key (create at /org/apikeys)
-    required:
-    - GRAFANA_URL
-    - GRAFANA_API_KEY
-  isolation_mode: per_user
-  tags:
-  - monitoring
-  - dashboards
-  - observability
-  - official
-  category: Developer Tools
-  repository_url: https://github.com/grafana/mcp-grafana
-  maintainer: Grafana
-  verified: true
-  version: 1.0.0
 - name: kubectl-mcp-server
   display_name: Kubectl
   description: MCP Server that enables AI assistants to interact with Kubernetes clusters
@@ -1516,12 +1475,12 @@ mcps:
 - name: markitdown
   display_name: MarkItDown
   description: Convert various document formats (PDF, DOCX, PPTX, HTML, images) to
-    clean Markdown. Powered by Microsoft's MarkItDown library.
+    clean Markdown. Powered by Microsoft's MarkItDown library. Pre-release (0.0.1a8) upstream.
   transport_type: stdio
   config:
     command:
     - uvx
-    - markitdown-mcp
+    - markitdown-mcp==0.0.1a8
   auth_type: none
   isolation_mode: shared
   requires_user_credentials: false
@@ -1530,11 +1489,16 @@ mcps:
   - conversion
   - markdown
   - pdf
+  - pre-release
   category: Developer Tools
   repository_url: https://github.com/microsoft/markitdown
   maintainer: Microsoft
   verified: true
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - f525ad3dfd3a2637b2ccb3c516d66f3a5d958a7316c31601106f1e9308a51b5b
+    - f91d7aaa62b249b7fe58885e8fa1eaad686f4f8e67b3eb08bda39756d45ba8a0
 - name: mcp-discord
   display_name: Discord
   description: Interact with the Discord platform.
@@ -2948,30 +2912,6 @@ mcps:
     pypi:
     - b3830c314b192aae4f343ac81188346812f2afd88bbd6573495402fa64cd3718
     - ee9dc45fb81b1179c95c949134b7d68dfcd22037ea4010e9ddee1d881ae09b54
-- name: time
-  display_name: Time
-  description: Get current time in any timezone and convert between timezones. Simple
-    utility for time-related queries.
-  transport_type: stdio
-  config:
-    # NOTE: not published to npm — cannot pin version
-    command:
-    - npx
-    - -y
-    - '@modelcontextprotocol/server-time'
-  auth_type: none
-  isolation_mode: shared
-  requires_user_credentials: false
-  tags:
-  - time
-  - timezone
-  - utility
-  - reference
-  category: Developer Tools
-  repository_url: https://www.npmjs.com/package/@modelcontextprotocol/server-time
-  maintainer: MCP Project
-  verified: true
-  version: 1.0.0
 - name: todoist
   display_name: Todoist
   description: Manage Todoist tasks and projects. Create, update, complete tasks,
