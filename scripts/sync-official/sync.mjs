@@ -10,7 +10,7 @@ import { pathToFileURL } from 'node:url';
 import yaml from '../lib/yaml.mjs';
 import { packageArg, pinProblem } from '../lib/checks.mjs';
 import { fetchAll } from './fetch-official.mjs';
-import { evaluate } from './eligibility.mjs';
+import { evaluate, cheapDrop } from './eligibility.mjs';
 import { lookupCandidate } from './index-lookup.mjs';
 import { buildEntry } from './map.mjs';
 import { renderPrBody } from './pr-body.mjs';
@@ -20,7 +20,7 @@ const readJson = f => JSON.parse(fs.readFileSync(new URL(f, here), 'utf8'));
 const pkgName = arg => (arg ? arg.replace(/(?<=.)(@|==).*$/, '').toLowerCase() : undefined);
 
 /** Pure-ish core: injectable rows source, lookups and validator. Returns the artifact contents. */
-export async function runSync({ registryText, rows, skipped = [], pages = 1, max = 10, now, lookup = lookupCandidate, validate, deny, top, dryRun = true }) {
+export async function runSync({ registryText, rows, rawRows, skipped = [], pages = 1, max = 10, now, lookup = lookupCandidate, validate, deny, top, dryRun = true }) {
   const doc = yaml.load(registryText);
   const existing = doc?.mcps ?? [];
   const takenSlugs = new Set(existing.map(m => m.name));
@@ -38,12 +38,14 @@ export async function runSync({ registryText, rows, skipped = [], pages = 1, max
   const rejected = [];
   const accepted = [];
   let deferred = 0;
+  let eligible = 0;
   const sorted = [...rows].sort((a, b) => a.server.name.localeCompare(b.server.name) || a.server.version.localeCompare(b.server.version));
   const nowMs = Date.parse(now);
   for (const row of sorted) {
     const name = row.server.name;
     const v = evaluate(row, ctx);
     if (!v.ok) { rejected.push({ name, reason: v.reason, detail: v.detail }); continue; }
+    eligible++;
     if (accepted.length >= max) { deferred++; continue; }
     let enrich;
     try { enrich = await lookup(v.plan, nowMs); } catch (e) { rejected.push({ name, reason: 'index-lookup-failed', detail: String(e.message).slice(0, 80) }); continue; }
@@ -60,8 +62,8 @@ export async function runSync({ registryText, rows, skipped = [], pages = 1, max
   let text = registryText.endsWith('\n') ? registryText : registryText + '\n';
   if (accepted.length) text += yaml.dump(accepted.map(a => a.entry), { lineWidth: 100, noRefs: true, noArrayIndent: true });
   const date = now.slice(0, 10);
-  const body = renderPrBody({ accepted, rejected, skipped, stats: { rows: rows.length, pages, rejected: rejected.length, deferred }, date, dryRun });
-  return { registryText: text, body, accepted, rejected, deferred, branch: `sync/official-${date}`, date };
+  const body = renderPrBody({ accepted, rejected, skipped, stats: { rows: rawRows ?? rows.length, pages, rejected: rejected.length, deferred }, date, dryRun });
+  return { registryText: text, body, accepted, rejected, deferred, eligible, branch: `sync/official-${date}`, date };
 }
 
 async function main() {
@@ -73,14 +75,28 @@ async function main() {
   if (!Number.isInteger(max) || max < 1 || max > 50) throw new Error('--max must be 1..50');
   if (!/^\d{4}-\d{2}-\d{2}T[\d:]+Z$/.test(now)) throw new Error('--now must be an ISO UTC timestamp');
   const { makeValidator } = await import('./schema-validate.mjs');
+  const deny = yaml.load(fs.readFileSync(new URL('denylist.yaml', here), 'utf8')) ?? {};
+  const registryText = fs.readFileSync(regPath, 'utf8');
+  // Network-free early filter for the fetcher: only rules that need no slug state or package lookup.
+  const earlyCtx = {
+    denyNames: new Set(deny.names ?? []),
+    existingOfficialNames: new Set((yaml.load(registryText)?.mcps ?? []).map(m => m.official_name).filter(Boolean)),
+  };
   const feed = arg('--rows-file')
     ? { rows: JSON.parse(fs.readFileSync(arg('--rows-file'), 'utf8')), skipped: [], pages: 1 }
-    : await fetchAll();
-  const deny = yaml.load(fs.readFileSync(new URL('denylist.yaml', here), 'utf8')) ?? {};
+    : await fetchAll({ keep: row => { const v = cheapDrop(row, earlyCtx); return v.ok ? undefined : v.reason; } });
+  if (feed.dropped) console.error(`fetched ${feed.rawRows} raw rows in ${feed.pages} pages; kept ${feed.rows.length}; dropped ${JSON.stringify(feed.dropped)}`);
   const res = await runSync({
-    registryText: fs.readFileSync(regPath, 'utf8'), ...feed, max, now, validate: makeValidator(),
+    registryText, ...feed, max, now, validate: makeValidator(),
     deny, top: readJson('top-packages.json'), dryRun: process.argv.includes('--dry-run'),
   });
+  const byReason = {};
+  for (const r of res.rejected) byReason[r.reason] = (byReason[r.reason] ?? 0) + 1;
+  const sortDesc = o => Object.fromEntries(Object.entries(o).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])));
+  console.error(`funnel: ${feed.rawRows ?? feed.rows.length} raw rows → ${feed.rows.length} after cheap drop → ${res.eligible} eligible candidates (before --max ${max}) → ${res.accepted.length} proposed`);
+  console.error(`cheap-dropped by reason: ${JSON.stringify(sortDesc(feed.dropped ?? {}))}`);
+  console.error(`rejected by reason: ${JSON.stringify(sortDesc(byReason))}`);
+  console.error(`heapUsed: ${Math.round(process.memoryUsage().heapUsed / 1048576)} MB`);
   fs.mkdirSync(out, { recursive: true });
   fs.writeFileSync(path.join(out, 'registry.yaml'), res.registryText);
   fs.writeFileSync(path.join(out, 'pr-body.md'), res.body);

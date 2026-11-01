@@ -7,8 +7,11 @@ export const LIMITS = Object.freeze({
   timeoutMs: 15_000,
   maxBytes: 5 * 1024 * 1024,
   pageSize: 100, // the API rejects larger values (422 observed at 500)
-  maxPages: 50,
-  maxRows: 5000,
+  // Sized from a live measurement (2026-11-01, version=latest): 545 pages / 54,427 rows; ~3x headroom.
+  maxPages: 1650,
+  maxRawRows: 165_000, // every row the feed returns, kept or dropped
+  budgetMs: 10 * 60_000, // whole-walk wall clock; the workflow job timeout is 15 min
+  logEvery: 50,
   maxDepth: 24,
 });
 
@@ -79,19 +82,36 @@ export function parsePage(json) {
 }
 
 /**
- * Walk the paged list. Stops at an empty cursor. A repeated cursor, a page that adds no new rows, or
- * exceeding the page/row caps throws (non-zero exit, no PR).
+ * Walk the paged list (latest versions only). Stops at an empty cursor. A repeated cursor, a page that adds no new rows,
+ * or exceeding the page / raw-row / wall-clock caps throws (non-zero exit, no PR).
+ * `keep(row)` may return a reason string to drop a row immediately (network-free rules only); dropped rows are counted
+ * in `dropped` but not retained, so memory holds survivors, not the whole feed.
  */
-export async function fetchAll({ base = OFFICIAL_BASE, fetchImpl = fetch, maxPages = LIMITS.maxPages, maxRows = LIMITS.maxRows } = {}) {
+export async function fetchAll({
+  base = OFFICIAL_BASE, fetchImpl = fetch, maxPages = LIMITS.maxPages, maxRawRows = LIMITS.maxRawRows,
+  budgetMs = LIMITS.budgetMs, logEvery = LIMITS.logEvery, keep = () => undefined, log = console.error, nowImpl = Date.now,
+} = {}) {
   const seenCursors = new Set();
   const seenRows = new Set();
   const rows = [];
   const skipped = [];
+  const dropped = {};
+  const started = nowImpl();
+  let rawRows = 0;
   let cursor = '';
   for (let page = 0; ; page++) {
     if (page >= maxPages) throw new Error(`page cap (${maxPages}) reached before the feed ended`);
-    const url = `${base}/v0.1/servers?limit=${LIMITS.pageSize}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
-    const { status, json } = await getJson(url, { fetchImpl });
+    const remaining = budgetMs - (nowImpl() - started);
+    if (remaining <= 0) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended`);
+    const url = `${base}/v0.1/servers?limit=${LIMITS.pageSize}&version=latest${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`;
+    let res;
+    try {
+      res = await getJson(url, { fetchImpl, timeoutMs: Math.min(LIMITS.timeoutMs, remaining) });
+    } catch (e) {
+      if (nowImpl() - started >= budgetMs) throw new Error(`time budget (${Math.round(budgetMs / 1000)}s) exhausted before the feed ended`);
+      throw e;
+    }
+    const { status, json } = res;
     if (status !== 200) throw new Error('list endpoint returned 404');
     const p = parsePage(json);
     let fresh = 0;
@@ -99,12 +119,16 @@ export async function fetchAll({ base = OFFICIAL_BASE, fetchImpl = fetch, maxPag
       const key = `${row.server.name}@${row.server.version}`;
       if (seenRows.has(key)) continue;
       seenRows.add(key);
-      rows.push(row);
       fresh++;
+      rawRows++;
+      if (rawRows > maxRawRows) throw new Error(`raw row cap (${maxRawRows}) exceeded`);
+      const why = keep(row);
+      if (why) { dropped[why] = (dropped[why] ?? 0) + 1; continue; }
+      rows.push(row);
     }
     skipped.push(...p.skipped);
-    if (rows.length > maxRows) throw new Error(`row cap (${maxRows}) exceeded`);
-    if (!p.cursor) return { rows, skipped, pages: page + 1 };
+    if ((page + 1) % logEvery === 0) log(`fetch progress: ${page + 1} pages, ${rawRows} raw rows, ${rows.length} kept`);
+    if (!p.cursor) return { rows, skipped, pages: page + 1, rawRows, dropped };
     if (seenCursors.has(p.cursor)) throw new Error('cursor loop detected');
     if (fresh === 0 && p.skipped.length === 0) throw new Error('page added no new rows (cursor loop)');
     seenCursors.add(p.cursor);
