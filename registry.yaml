@@ -47,6 +47,54 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+- name: alpaca
+  display_name: Alpaca Trading
+  description: Alpaca Trading and Market Data API for stocks, options and crypto - account,
+    orders, positions, watchlists, quotes, bars and news. Paper trading by default; live
+    trading requires the admin to change ALPACA_PAPER_TRADE. Order-placing, order-modifying
+    and position-closing tools should be gated with requires_approval.
+  transport_type: stdio
+  config:
+    command:
+    - uvx
+    - alpaca-mcp-server==2.4.0
+    env:
+      ALPACA_API_KEY: ${ALPACA_API_KEY}
+      ALPACA_SECRET_KEY: ${ALPACA_SECRET_KEY}
+      ALPACA_PAPER_TRADE: 'true'
+  auth_type: static
+  requires_user_credentials: true
+  credential_schema:
+    type: object
+    properties:
+      ALPACA_API_KEY:
+        type: string
+        title: Alpaca API Key
+        description: Your Alpaca API key (use a paper-trading key unless live trading is enabled)
+      ALPACA_SECRET_KEY:
+        type: string
+        title: Alpaca Secret Key
+        description: Your Alpaca API secret key
+    required:
+    - ALPACA_API_KEY
+    - ALPACA_SECRET_KEY
+  isolation_mode: per_user
+  tags:
+  - finance
+  - trading
+  - stocks
+  - options
+  - crypto
+  category: Finance & Data
+  repository_url: https://github.com/alpacahq/alpaca-mcp-server
+  documentation_url: https://github.com/alpacahq/alpaca-mcp-server#readme
+  version: 2.4.0
+  maintainer: Alpaca
+  verified: false
+  package_integrity:
+    pypi:
+    - dc54f75f9dcca50550ae7665639a8c0f1b5f0ce36982fae5d0a0535abaaf3ed2
+    - 243e9f80d00dcd88acbcf231aa269e51c175733155b0e329f1a8f65b6742d94c
 - name: alpha-vantage
   display_name: Alpha Vantage
   description: Real-time and historical financial market data, including stocks, forex,
