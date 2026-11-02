@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { OFFICIAL_META_KEY, publisherTier, evaluate, hostMatchesDomain } from '../sync-official/eligibility.mjs';
+import { OFFICIAL_META_KEY, publisherTier, publisherKey, parseOfficialName, evaluate, hostMatchesDomain } from '../sync-official/eligibility.mjs';
 import { ALLOWED_SCHEMAS } from '../sync-official/fetch-official.mjs';
 import { runSync, deriveWatermark } from '../sync-official/sync.mjs';
 import { makeValidator } from '../sync-official/schema-validate.mjs';
@@ -152,4 +152,23 @@ test('workflow: new inputs reach the shell only via env, never interpolated into
   assert.match(wf, /FULL_SCAN: \$\{\{ inputs\.full_scan \}\}/);
   assert.match(wf, /full_scan:[\s\S]*?type: boolean[\s\S]*?default: false/);
   assert.match(wf, /max_per_publisher:[\s\S]*?type: number[\s\S]*?default: 2/);
+});
+
+test('com.acme and com.acme.mcp share one cap; different second labels do not', async () => {
+  const rows = [npmRow('com.acme/a', { updatedAt: '2026-11-05T00:00:00Z' }), npmRow('com.acme.mcp/b', { updatedAt: '2026-11-04T00:00:00Z' }), npmRow('com.Acme.tools/c', { updatedAt: '2026-11-03T00:00:00Z' }), npmRow('com.acmecorp/d', { updatedAt: '2026-11-02T00:00:00Z' })];
+  const res = await sync(rows, { max: 10, maxPerPublisher: 2 });
+  assert.deepEqual(names(res), ['com.acme/a', 'com.acme.mcp/b', 'com.acmecorp/d']);
+  assert.equal(res.scope.publishers, 2);
+});
+
+test('publisherKey: github owners stay distinct and lowercase; domains collapse to two labels', () => {
+  assert.equal(publisherKey(parseOfficialName('io.github.Foo/x')), 'io.github.foo');
+  assert.notEqual(publisherKey(parseOfficialName('io.github.foo/x')), publisherKey(parseOfficialName('io.github.bar/x')));
+  assert.equal(publisherKey(parseOfficialName('com.acme.mcp.deep/x')), 'com.acme');
+  assert.equal(publisherKey(parseOfficialName('com.acme/x')), 'com.acme');
+});
+
+test('KNOWN LIMITATION: uk.co.* publishers share one key (no public-suffix list; strict side, documented)', async () => {
+  const rows = ['uk.co.a/x', 'uk.co.b/x', 'uk.co.c/x'].map(n => npmRow(n));
+  assert.equal((await sync(rows, { max: 10 })).accepted.length, 2);
 });
