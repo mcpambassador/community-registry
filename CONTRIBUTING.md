@@ -64,6 +64,8 @@ Add a `credential_schema` with JSON Schema format:
       - API_KEY
 ```
 
+The server injects each credential under the property's `env_var`, or under the property key when `env_var` is absent. So a property key that is already a valid environment variable name (`^[A-Z_][A-Z0-9_]*$`) needs nothing extra, but make sure it is the variable the package really reads. Any other key (for example `host` or `project_id`), required or optional, must set `env_var` (check the package's README or source). CI rejects added or changed static entries that omit it.
+
 ### For OAuth2 Auth
 
 Add an `oauth_config`:
@@ -107,6 +109,8 @@ command:
 If your package is not published to the npm registry (e.g., it uses a private
 registry or a different distribution mechanism), note this clearly in your PR
 and the maintainers will evaluate on a case-by-case basis.
+
+CI also checks that each pinned package and version exists on npm or PyPI. If npm or PyPI is unreachable the check fails as "could not verify" (not as a missing package); re-run the failed job once the outage is over. A weekly scheduled run re-checks every pin.
 
 CI enforces this on every entry you add or change (and, once the existing
 unpinned entries are fixed, on the whole file). It also rejects new entries with

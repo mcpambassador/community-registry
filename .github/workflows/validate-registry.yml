@@ -250,11 +250,56 @@ jobs:
             (cd base && npm ci --ignore-scripts --no-audit --no-fund)
           elif git -C head diff --diff-filter=A --name-only "$BASE_SHA" HEAD | grep -qx scripts/ci/check.mjs; then
             # Bootstrap: this PR itself introduces the checker, so the base has none to trust.
-            echo "::warning::base has no scripts/ci/check.mjs and this PR adds it; running the PR's own checker (bootstrap only)"
+            echo "::warning::base has no scripts/ci/check.mjs and the PR head has it; running the PR's own checker (bootstrap only)"
             CHECKER_DIR=head
             (cd head && npm ci --ignore-scripts --no-audit --no-fund)
           else
-            echo "::error::base has no scripts/ci/check.mjs and this PR does not add it; refusing to skip policy checks"
+            echo "::error::base has no scripts/ci/check.mjs and the PR head does not either; refusing to skip policy checks"
             exit 1
           fi
           node "$CHECKER_DIR/scripts/ci/check.mjs" --base base/registry.yaml --head head/registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
+
+  # TD-038: every pinned npx/uvx package@version of an added or changed entry must exist on its index.
+  # Same trust model as policy-checks: the checker comes from the BASE commit; the PR head is data only.
+  package-exists:
+    name: Pinned packages exist
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out base ref (trusted checker)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+
+      - name: Check out PR head (data only)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: head
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 20
+
+      - name: Verify pinned packages exist on npm / PyPI
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -eu
+          git -C head fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if [ -f base/scripts/ci/package-exists.mjs ]; then
+            CHECKER_DIR=base
+            (cd base && npm ci --ignore-scripts --no-audit --no-fund)
+          elif git -C head diff --diff-filter=A --name-only "$BASE_SHA" HEAD | grep -qx scripts/ci/package-exists.mjs; then
+            echo "::warning::base has no scripts/ci/package-exists.mjs and this PR adds it; running the PR's own checker (bootstrap only)"
+            CHECKER_DIR=head
+            (cd head && npm ci --ignore-scripts --no-audit --no-fund)
+          else
+            echo "::error::base has no scripts/ci/package-exists.mjs and this PR does not add it; refusing to skip the check"
+            exit 1
+          fi
+          node "$CHECKER_DIR/scripts/ci/package-exists.mjs" --base base/registry.yaml --head head/registry.yaml

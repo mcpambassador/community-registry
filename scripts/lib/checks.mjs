@@ -129,6 +129,24 @@ export function fixedEnvCollision(m) {
   return null;
 }
 
+const ENV_NAME = /^[A-Z_][A-Z0-9_]*$/;
+
+/**
+ * TD-048: the server injects a credential under `env_var`, falling back to the property key. So a
+ * static-credential property (required or optional) needs an explicit non-empty `env_var` only when
+ * its key is not itself a valid environment variable name (`^[A-Z_][A-Z0-9_]*$`). Returns those keys
+ * (empty when the entry is not static or every such key is mapped).
+ */
+export function staticCredentialProblems(m) {
+  if (m?.auth_type !== 'static') return [];
+  const props = m.credential_schema?.properties ?? {};
+  return Object.keys(props).filter(k => {
+    if (ENV_NAME.test(k)) return false;
+    const ev = props[k]?.env_var;
+    return typeof ev !== 'string' || ev.trim() === '';
+  });
+}
+
 export function universalChecks({ baseMcps, headMcps, allPins = false }) {
   const errors = [];
   const { added, changed } = changedEntries(baseMcps, headMcps);
@@ -152,6 +170,14 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
     if (m.verified === true) errors.push(`[${m.name}] a new entry cannot be added with verified: true`);
   }
   for (const m of [...added, ...changed]) errors.push(...lintEntryText(m));
+  // TD-048: changed/added entries only (never --all-pins), so existing entries are fixed as they are touched.
+  for (const m of [...added, ...changed]) {
+    const missing = staticCredentialProblems(m);
+    if (missing.length) {
+      const names = missing.map(k => String(k).replace(/[^A-Za-z0-9_.-]/g, '?').slice(0, 64)).join(', ');
+      errors.push(`[${m.name}] auth_type static: credential propert(ies) whose key is not an env var name and have no env_var: ${names}`);
+    }
+  }
   return errors;
 }
 
