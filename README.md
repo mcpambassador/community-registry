@@ -26,7 +26,7 @@ Full entry format and categories: [CONTRIBUTING.md](CONTRIBUTING.md). To report 
 
 ```bash
 npm install
-npm run check   # same validation as CI
+npm run check   # validates registry.yaml: schema, policy, all pins
 npm test
 ```
 

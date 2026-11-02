@@ -6,7 +6,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node --test scripts/",
-    "check": "node scripts/ci/check.mjs"
+    "check": "node scripts/ci/check.mjs --base registry.yaml --head registry.yaml --all-pins"
   },
   "devDependencies": {
     "ajv": "8.17.1",
