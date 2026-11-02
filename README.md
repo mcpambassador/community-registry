@@ -32,12 +32,12 @@ npm test
 
 ## Official registry sync
 
-A manually triggered (and weekly dry-run) GitHub Action, [`sync-official-registry.yml`](.github/workflows/sync-official-registry.yml), proposes entries from the official MCP Registry as pull requests (ADR-024). It is a candidate feed, not a trust root:
+A GitHub Action, [`sync-official-registry.yml`](.github/workflows/sync-official-registry.yml), proposes entries from the official MCP Registry (ADR-024). It is a candidate feed, not a trust root:
 
-- Dry run by default; scheduled runs are always dry runs.
-- Opens a PR only; it never merges, never pushes to `main`, and never installs or runs a candidate package.
-- Synced entries are marked `source: official-registry` and are held to a stricter diff scope in CI.
-- A human reviews every PR.
+- Weekly scheduled runs are dry runs only; real runs are started manually.
+- Intake is curated: per-run and per-publisher caps, publisher and repo checks, a deny-list.
+- It opens a PR only. It never merges, never pushes to `main`, and never installs or runs a candidate package. A human reviews every PR.
+- Synced entries carry `source: official-registry` and face a stricter diff scope in CI.
 
 ## Related
 
