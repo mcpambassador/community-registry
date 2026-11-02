@@ -57,22 +57,30 @@ test('ranking: score beats recency inside a tier; unscored (no repo) rank after 
   const repoMeta = async (owner) => owner === 'dead' ? meta(9000, { archived: true }) : owner === 'old' ? meta(50, { pushedAt: NOWMS - 400 * DAY }) : meta(stars[owner]);
   const res = await sync(rows, repoMeta, { max: 10, maxPerPublisher: 2 });
   assert.deepEqual(names(res), ['io.github.popular/t', 'io.github.lowstars/t', 'io.github.newest/t']);
-  assert.deepEqual(res.scope.repoStats, { checked: 4, archived: 1, stale: 1, unavailable: 0, rateLimited: false });
+  assert.deepEqual(res.scope.repoStats, { checked: 4, archived: 1, stale: 1, unavailable: 0, unscored: 0, rateLimited: false });
   assert.deepEqual(res.rejected.map(r => r.reason).sort(), ['repo-archived', 'repo-stale']);
   assert.match(res.body, /5000 stars, last push 2026-10-29/);
   assert.match(res.body, /1 rejected as archived, 1 rejected for no push in 12 months/);
 });
 
-test('fail-soft: 404 and network errors defer the candidate; a rate limit stops further calls; nothing throws', async () => {
+test('fail-soft: 404 defers the candidate; a rate limit stops further calls and leaves the rest unscored (still eligible); nothing throws', async () => {
   const rows = [ghRow('a', 7), ghRow('b', 6), ghRow('c', 5), ghRow('d', 4)];
   let calls = 0;
   const repoMeta = async owner => { calls++; return owner === 'a' ? { error: 'not-found' } : owner === 'b' ? { error: 'rate-limited' } : meta(10); };
   const res = await sync(rows, repoMeta, { max: 10 });
   assert.equal(calls, 2, 'no call after the rate limit');
-  assert.deepEqual(names(res), []);
-  assert.equal(res.deferred, 4);
+  assert.deepEqual(names(res), ['io.github.b/t', 'io.github.c/t', 'io.github.d/t'], 'unscored keep newest-first');
+  assert.equal(res.deferred, 1, 'only the 404');
   assert.equal(res.scope.repoStats.rateLimited, true);
+  assert.equal(res.scope.repoStats.unscored, 3);
   assert.match(res.body, /GitHub rate limit hit/);
+});
+
+test('rate limit: scored candidates still outrank the unscored ones', async () => {
+  const rows = [ghRow('a', 7), ghRow('b', 6), ghRow('c', 5)];
+  const res = await sync(rows, async o => (o === 'c' ? meta(500) : { error: 'rate-limited' }), { max: 10 });
+  assert.equal(res.scope.repoStats.rateLimited, true);
+  assert.deepEqual(names(res), ['io.github.a/t', 'io.github.b/t', 'io.github.c/t']);
 });
 
 test('bounds: only the top maxLookups queue entries get metadata; the rest keep the old order after them', async () => {
@@ -83,13 +91,14 @@ test('bounds: only the top maxLookups queue entries get metadata; the rest keep 
   assert.deepEqual(names(res), ['io.github.b/t', 'io.github.a/t']);
 });
 
-test('bounds: the lookup budget stops metadata fetches (remaining GitHub candidates are deferred, not crashed)', async () => {
+test('bounds: the lookup budget stops metadata fetches; the remaining GitHub candidates stay unscored, not dropped', async () => {
   let t = 0;
   const rows = [ghRow('a', 7), ghRow('b', 6), ghRow('c', 5)];
   let calls = 0;
   const res = await sync(rows, async () => { calls++; t += 400; return meta(10); }, { max: 10, nowImpl: () => t, lookupBudgetMs: 1000, maxLookups: 10 });
   assert.ok(calls < 3, `calls=${calls}`);
-  assert.ok(res.deferred >= 1);
+  assert.ok(res.scope.repoStats.unscored >= 1);
+  assert.equal(res.accepted.length, 3);
 });
 
 test('without a repoMeta fetcher nothing changes (offline runs)', async () => {
@@ -119,4 +128,25 @@ test('fetchRepoMeta: request shape, token only as a bearer header, status mappin
   const n = calls.length;
   for (const [o, r] of [['..', 'x'], ['a', '../x'], ['a/b', 'c'], ['a', 'b?x'], ['', 'b']]) assert.deepEqual(await fetchRepoMeta(o, r, { fetchImpl: mk(200) }), { error: 'unavailable' });
   assert.equal(calls.length, n);
+});
+
+test('CLI: the token is removed from process.env before anything else runs; --dry-run writes has_changes=false', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tok-'));
+  const rowsFile = path.join(dir, 'rows.json');
+  fs.writeFileSync(rowsFile, JSON.stringify([{ server: { $schema: SCHEMA, version: '1.0.0', description: 'd', name: 'com.acme/a', remotes: [{ type: 'streamable-http', url: 'https://mcp.acme.com/mcp' }] }, _meta: { [OFFICIAL_META_KEY]: { status: 'active', isLatest: true } } }]));
+  const out = path.join(dir, 'gh_output');
+  fs.writeFileSync(out, '');
+  const run = flag => spawnSync(process.execPath, ['scripts/sync-official/sync.mjs', '--out', path.join(dir, 'o'), '--rows-file', rowsFile, ...flag], { encoding: 'utf8', env: { ...process.env, GITHUB_TOKEN: 'secret-token-xyz', GITHUB_OUTPUT: out } });
+  const d = run(['--dry-run']);
+  assert.equal(d.status, 0, d.stderr);
+  assert.doesNotMatch(d.stdout + d.stderr, /secret-token-xyz/);
+  assert.match(fs.readFileSync(out, 'utf8'), /has_changes=false/);
+  fs.writeFileSync(out, '');
+  assert.equal(run([]).status, 0);
+  assert.match(fs.readFileSync(out, 'utf8'), /has_changes=true/);
+  const src = fs.readFileSync(new URL('../sync-official/sync.mjs', import.meta.url), 'utf8');
+  assert.ok(src.indexOf('delete process.env.GITHUB_TOKEN') < src.indexOf("await import('./schema-validate.mjs')"), 'token removed before ajv is imported');
 });

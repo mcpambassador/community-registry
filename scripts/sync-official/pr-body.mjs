@@ -12,7 +12,7 @@ export function renderPrBody({ accepted, rejected, skipped, stats, date, dryRun,
   L.push(`Fetched ${stats.rows} rows over ${stats.pages} page(s); ${accepted.length} proposed, ${stats.rejected} rejected, ${stats.deferred} deferred by the per-run caps.`, '');
   if (scope) L.push(`Scope: ${watermark ? `incremental scan, updated since ${code(watermark)}` : 'full scan'}; eligible candidates by tier: ${scope.tierCounts[1]} github-or-host-matched, ${scope.tierCounts[2]} other; proposed: ${scope.acceptedTiers[1]} github-or-host-matched, ${scope.acceptedTiers[2]} other, from ${scope.publishers} publisher(s) (at most ${scope.maxPerPublisher} each; ${scope.cappedByPublisher} held back by that cap).`, '');
   const rs = scope?.repoStats;
-  if (rs) L.push(`Repository signal (GitHub-hosted candidates in the top lookup set): ${rs.checked} checked, ${rs.archived} rejected as archived, ${rs.stale} rejected for no push in 12 months, ${rs.unavailable} deferred as unavailable${rs.rateLimited ? ' (GitHub rate limit hit)' : ''}. Within a tier, candidates rank by log10(1 + stars) plus 0.5 for a repo older than 180 days, then newest.`, '');
+  if (rs) L.push(`Repository signal (GitHub-hosted candidates in the top lookup set): ${rs.checked} checked, ${rs.archived} rejected as archived, ${rs.stale} rejected for no push in 12 months, ${rs.unavailable} deferred as unavailable, ${rs.unscored} left unscored${rs.rateLimited ? ' (GitHub rate limit hit)' : ''}. Within a tier, candidates rank by log10(1 + stars) plus 0.5 for a repo older than 180 days, then newest.`, '');
   if (accepted.length) {
     L.push('### Proposed additions', '');
     for (const a of accepted) {

@@ -1,7 +1,9 @@
 # Labels registry PRs by category / transport / auth. TD-056: the previous inline github-script step failed on every PR
 # (`require.resolve is not a function`); the logic now lives in scripts/ci/label-category.mjs.
-# SECURITY: trigger is `pull_request` (never pull_request_target). The script and node_modules come from the BASE sha;
-# the PR's registry.yaml is checked out to head/ and parsed as data only (js-yaml safe load). No PR code is executed.
+# SECURITY: trigger is `pull_request` (never pull_request_target or workflow_run). Under pull_request the base-sha checkout
+# is NOT a protection by itself; the boundary is the token scope: fork PRs get a read-only token and are never labelled
+# (the job only warns), same-repo PRs come from people with write access. The labeller parses the PR's registry.yaml as
+# data only (vendored js-yaml) and executes nothing from the PR checkout.
 name: Auto-Label by Category
 
 on:
@@ -37,12 +39,10 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install base dependencies (lockfile, no install scripts)
-        run: cd base && npm ci --ignore-scripts --no-audit --no-fund
-
       - name: Detect additions and label
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: node base/scripts/ci/label-category.mjs head/registry.yaml
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        run: node base/scripts/ci/label-category.mjs head/registry.yaml --base base/registry.yaml
