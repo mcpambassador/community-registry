@@ -16,17 +16,27 @@ import { packageArg, changedEntries } from '../lib/checks.mjs';
 export const TIMEOUT_MS = 10_000;
 export const RETRIES = 2;
 
-/** { runner, name, version } for an exactly pinned npx/uvx command, or null. */
+const NPM_NAME = /^(@[a-z0-9~-][a-z0-9._~-]*\/)?[a-z0-9~-][a-z0-9._~-]*$/;
+const NPM_VER = /^[0-9A-Za-z.+_-]+$/;
+const PYPI_VER = /^[A-Za-z0-9.+!_-]+$/;
+
+/** { runner, name, version, invalid } for an exactly pinned npx/uvx command, or null. */
 export function parsePin(command) {
   const p = packageArg(command);
   if (!p || typeof p.arg !== 'string') return null;
   if (p.runner === 'npx') {
     const i = p.arg.lastIndexOf('@');
     if (i <= 0) return null;
-    return { runner: 'npx', name: p.arg.slice(0, i), version: p.arg.slice(i + 1) };
+    const name = p.arg.slice(0, i), version = p.arg.slice(i + 1);
+    const pin = { runner: 'npx', name, version };
+    if (!NPM_NAME.test(name) || !NPM_VER.test(version)) pin.invalid = true;
+    return pin;
   }
   const m = /^([A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^\]]*\])?==(.+)$/.exec(p.arg);
-  return m ? { runner: 'uvx', name: m[1], version: m[2] } : null;
+  if (!m) return null;
+  const pin = { runner: 'uvx', name: m[1], version: m[2] };
+  if (!PYPI_VER.test(m[2])) pin.invalid = true;
+  return pin;
 }
 
 /** URL on the package's index for one exact version. */
@@ -46,7 +56,7 @@ export async function checkPin(pin, fetchImpl = globalThis.fetch, { timeoutMs = 
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
-      const res = await fetchImpl(url, { signal: ac.signal, headers: { accept: 'application/json' }, redirect: 'follow' });
+      const res = await fetchImpl(url, { signal: ac.signal, headers: { accept: 'application/json' }, redirect: 'error' });
       if (res.status === 200) return { status: 'found' };
       if (res.status === 404) return { status: 'missing' };
       detail = `HTTP ${res.status}`;
@@ -67,6 +77,11 @@ export async function checkEntries(entries, fetchImpl) {
   for (const m of entries) {
     const pin = parsePin(m.config?.command);
     if (!pin) continue;
+    if (pin.invalid) {
+      out.checked++;
+      out.missing.push(`[${m.name}] pinned package name or version is not a valid ${pin.runner === 'npx' ? 'npm' : 'PyPI'} identifier; not fetched`);
+      continue;
+    }
     const key = `${pin.runner}:${pin.name}@${pin.version}`;
     if (!seen.has(key)) seen.set(key, await checkPin(pin, fetchImpl));
     const r = seen.get(key);
