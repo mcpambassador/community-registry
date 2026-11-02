@@ -1,11 +1,20 @@
 version: 2
 updates:
-  # GitHub Actions only (no code dependencies in this repo)
+  # GitHub Actions only (no code dependencies). Dependabot keeps SHA pins (ADR-024).
+  # Security updates ignore this schedule and grouping.
+
+  # GitHub Actions: one monthly grouped PR
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "monthly"
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+    groups:
+      actions:
+        patterns:
+          - "*"
     labels:
       - "dependencies"
       - "automated"
