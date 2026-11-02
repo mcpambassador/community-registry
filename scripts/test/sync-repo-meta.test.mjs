@@ -150,3 +150,19 @@ test('CLI: the token is removed from process.env before anything else runs; --dr
   const src = fs.readFileSync(new URL('../sync-official/sync.mjs', import.meta.url), 'utf8');
   assert.ok(src.indexOf('delete process.env.GITHUB_TOKEN') < src.indexOf("await import('./schema-validate.mjs')"), 'token removed before ajv is imported');
 });
+
+test('F1: archived/stale rejections use up checks and the window refills; a GitHub candidate is never accepted unchecked', async () => {
+  const rows = [ghRow('arch', 7), ghRow('stale', 6), ghRow('good', 5), ghRow('tail', 4)];
+  const checked = [];
+  const repoMeta = async o => { checked.push(o); return o === 'arch' ? meta(1, { archived: true }) : o === 'stale' ? meta(1, { pushedAt: NOWMS - 400 * DAY }) : meta(5); };
+  const one = await sync(rows, repoMeta, { max: 10, maxPerPublisher: 2, maxLookups: 1 });
+  assert.deepEqual(names(one), [], 'cap spent on the archived repo: nothing accepted, in particular not stale/good/tail');
+  checked.length = 0;
+  const three = await sync(rows, repoMeta, { max: 10, maxPerPublisher: 2, maxLookups: 3 });
+  assert.deepEqual(names(three), ['io.github.good/t']);
+  assert.deepEqual(checked, ['arch', 'stale', 'good']);
+  assert.ok(!names(three).includes('io.github.tail/t'), 'tail is past the check cap and unchecked');
+  checked.length = 0;
+  const refill = await sync(rows, repoMeta, { max: 1, maxPerPublisher: 2, maxLookups: 10 });
+  assert.deepEqual(names(refill), ['io.github.good/t']);
+});

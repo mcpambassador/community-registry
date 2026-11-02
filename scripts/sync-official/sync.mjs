@@ -86,38 +86,45 @@ export async function runSync({
   const tierCounts = { 1: 0, 2: 0 };
   for (const q of queue) tierCounts[q.tier]++;
   queue.sort((a, b) => a.tier - b.tier); // stable: keeps the newest-first order inside each tier
-  // FB-036: repository quality signal for the top lookup set only (the first maxLookups queue entries), bounded by the
-  // lookup budget. Archived/stale repos are rejected, unreachable ones deferred; the rest rank by score inside their tier.
+  // FB-036: repository quality signal, bounded by maxLookups checks and the lookup budget. Candidates are ranked chunk by
+  // chunk (tier, then score, then newest). Archived/stale repos are rejected and unreachable ones deferred; because those
+  // use up checks, the next chunk refills until `max` are accepted or the check cap is spent. A GitHub-hosted candidate is
+  // never accepted unchecked, except when GitHub rate-limits or the metadata budget runs out (then it stays, unscored).
   const repoStats = { checked: 0, archived: 0, stale: 0, unavailable: 0, unscored: 0, rateLimited: false };
   const metaOf = new Map();
-  let ranked = queue;
-  if (repoMeta) {
-    const window = queue.slice(0, maxLookups);
-    const kept = [];
-    for (const q of window) {
-      const repo = githubRepoOf(q.row.server.repository?.url);
-      if (!repo) { kept.push(q); continue; }
-      let r = { error: 'unavailable' };
-      // Rate-limited or out of metadata budget: the candidate stays in the queue unscored (ranks after scored ones).
-      if (repoStats.rateLimited || nowImpl() - lookupStart > lookupBudgetMs / 2) { repoStats.unscored++; kept.push(q); continue; }
-      repoStats.checked++;
-      r = await repoMeta(repo.owner, repo.repo);
-      if (r.error === 'rate-limited') { repoStats.rateLimited = true; repoStats.unscored++; kept.push(q); continue; }
-      if (!r.meta) { repoStats.unavailable++; deferred++; continue; }
-      const sc = scoreRepo(r.meta, nowMs);
-      if (sc.reject) { repoStats[sc.reject === 'repo-archived' ? 'archived' : 'stale']++; rejected.push({ name: q.row.server.name, reason: sc.reject }); continue; }
-      q.score = sc.score;
-      metaOf.set(q.row, r.meta);
-      kept.push(q);
+  let pos = 0;
+  async function* rankedStream() {
+    if (!repoMeta) { yield* queue; return; }
+    while (pos < queue.length) {
+      if (accepted.length >= max || lookups >= maxLookups) { yield* queue.slice(pos); return; } // the loop below defers these
+      const size = repoStats.checked >= maxLookups ? queue.length - pos : Math.max(1, maxLookups - repoStats.checked);
+      const chunk = queue.slice(pos, pos + size);
+      pos += chunk.length;
+      const kept = [];
+      for (const q of chunk) {
+        const repo = githubRepoOf(q.row.server.repository?.url);
+        if (!repo) { kept.push(q); continue; }
+        if (repoStats.checked >= maxLookups) { deferred++; continue; } // check cap spent: never accepted unchecked
+        if (repoStats.rateLimited || nowImpl() - lookupStart > lookupBudgetMs / 2) { repoStats.unscored++; kept.push(q); continue; }
+        repoStats.checked++;
+        const r = await repoMeta(repo.owner, repo.repo);
+        if (r.error === 'rate-limited') { repoStats.rateLimited = true; repoStats.unscored++; kept.push(q); continue; }
+        if (!r.meta) { repoStats.unavailable++; deferred++; continue; }
+        const sc = scoreRepo(r.meta, nowMs);
+        if (sc.reject) { repoStats[sc.reject === 'repo-archived' ? 'archived' : 'stale']++; rejected.push({ name: q.row.server.name, reason: sc.reject }); continue; }
+        q.score = sc.score;
+        metaOf.set(q.row, r.meta);
+        kept.push(q);
+      }
+      // Scored first (best score first), unscored after; stable sort keeps newest-first for ties. Tier still dominates.
+      kept.sort((a, b) => a.tier - b.tier || (b.score ?? -1) - (a.score ?? -1));
+      yield* kept;
     }
-    // Scored first (best score first), unscored after; stable sort keeps newest-first for ties. Tier still dominates.
-    kept.sort((a, b) => a.tier - b.tier || (b.score ?? -1) - (a.score ?? -1));
-    ranked = [...kept, ...queue.slice(maxLookups)];
   }
   const perPublisher = new Map();
   const acceptedTiers = { 1: 0, 2: 0 };
   let cappedByPublisher = 0;
-  for (const { row, tier } of ranked) {
+  for await (const { row, tier } of rankedStream()) {
     const name = row.server.name;
     if (accepted.length >= max || lookups >= maxLookups) { deferred++; continue; }
     // Re-evaluate: slugs taken by entries accepted earlier in this run change the outcome.
