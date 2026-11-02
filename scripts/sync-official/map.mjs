@@ -37,7 +37,7 @@ export function buildEntry(plan, server, enrich, nowIso) {
   if (needsCreds) {
     entry.credential_schema = { type: 'object', properties: {}, required: secretOrRequired.filter(v => v.required).map(v => v.name) };
     for (const v of secretOrRequired) {
-      entry.credential_schema.properties[v.name] = { type: 'string', title: v.name, description: clean(v.description, 200) || v.name };
+      entry.credential_schema.properties[v.name] = { type: 'string', title: v.name, description: clean(v.description, 200) || v.name, env_var: v.name };
     }
     if (!entry.credential_schema.required.length) delete entry.credential_schema.required;
   }

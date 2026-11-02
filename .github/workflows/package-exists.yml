@@ -1,0 +1,37 @@
+# TD-038: weekly / manual check that every pinned npx/uvx package@version in registry.yaml still exists
+# on npm / PyPI. Read-only; it opens nothing and changes nothing. Pull requests are covered by the
+# `package-exists` job in validate-registry.yml (changed and added entries only).
+# SECURITY: no pull_request_target, no secrets, no write permissions.
+name: Pinned packages exist
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 6 * * 1'
+
+permissions: {}
+
+concurrency:
+  group: package-exists
+  cancel-in-progress: false
+
+jobs:
+  all-entries:
+    name: Verify all pinned packages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 20
+
+      - name: Install pinned dependencies (no lifecycle scripts)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Verify every pinned package exists
+        run: node scripts/ci/package-exists.mjs --head registry.yaml --all

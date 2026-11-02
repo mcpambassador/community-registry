@@ -129,6 +129,21 @@ export function fixedEnvCollision(m) {
   return null;
 }
 
+/**
+ * TD-048: a static-credential entry must say which environment variable each required credential
+ * fills, or Ambassador cannot inject the user's secret. Returns the required property names that
+ * have no non-empty `env_var` (empty when the entry is not static or is fully mapped).
+ */
+export function staticCredentialProblems(m) {
+  if (m?.auth_type !== 'static') return [];
+  const props = m.credential_schema?.properties ?? {};
+  const required = Array.isArray(m.credential_schema?.required) ? m.credential_schema.required : [];
+  return required.filter(k => {
+    const ev = props[k]?.env_var;
+    return typeof ev !== 'string' || ev.trim() === '';
+  });
+}
+
 export function universalChecks({ baseMcps, headMcps, allPins = false }) {
   const errors = [];
   const { added, changed } = changedEntries(baseMcps, headMcps);
@@ -152,6 +167,14 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
     if (m.verified === true) errors.push(`[${m.name}] a new entry cannot be added with verified: true`);
   }
   for (const m of [...added, ...changed]) errors.push(...lintEntryText(m));
+  // TD-048: changed/added entries only (never --all-pins), so existing entries are fixed as they are touched.
+  for (const m of [...added, ...changed]) {
+    const missing = staticCredentialProblems(m);
+    if (missing.length) {
+      const names = missing.map(k => String(k).replace(/[^A-Za-z0-9_.-]/g, '?').slice(0, 64)).join(', ');
+      errors.push(`[${m.name}] auth_type static: required credential(s) without env_var: ${names}`);
+    }
+  }
   return errors;
 }
 

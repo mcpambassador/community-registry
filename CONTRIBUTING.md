@@ -64,6 +64,8 @@ Add a `credential_schema` with JSON Schema format:
       - API_KEY
 ```
 
+Every property listed in `required` must also set `env_var`, the environment variable the MCP reads (check the package's README or source). Without it Ambassador cannot inject the user's secret. CI rejects added or changed static entries that omit it.
+
 ### For OAuth2 Auth
 
 Add an `oauth_config`:
@@ -107,6 +109,8 @@ command:
 If your package is not published to the npm registry (e.g., it uses a private
 registry or a different distribution mechanism), note this clearly in your PR
 and the maintainers will evaluate on a case-by-case basis.
+
+CI also checks that each pinned package and version exists on npm or PyPI.
 
 CI enforces this on every entry you add or change (and, once the existing
 unpinned entries are fixed, on the whole file). It also rejects new entries with

@@ -158,3 +158,23 @@ test('locked env names cannot be bound by credential_schema, even without a fixe
     assert.ok(errs.some(e => /locked environment variable/.test(e)), JSON.stringify(props));
   }
 });
+
+test('TD-048: static entries need env_var on every required credential', async () => {
+  const { staticCredentialProblems } = await import('../lib/checks.mjs');
+  const cs = (props, required) => ({ type: 'object', properties: props, required });
+  const ok = entry({ auth_type: 'static', credential_schema: cs({ KEY: { type: 'string', env_var: 'KEY' } }, ['KEY']) });
+  const bad = entry({ auth_type: 'static', credential_schema: cs({ KEY: { type: 'string' }, OK: { env_var: 'OK' } }, ['KEY', 'OK']) });
+  assert.deepEqual(staticCredentialProblems(ok), []);
+  assert.deepEqual(staticCredentialProblems(bad), ['KEY']);
+  assert.deepEqual(staticCredentialProblems(entry({ auth_type: 'static', credential_schema: cs({ K: { env_var: ' ' } }, ['K']) })), ['K']);
+  assert.deepEqual(staticCredentialProblems(entry({ auth_type: 'none' })), []);
+  assert.deepEqual(staticCredentialProblems(entry({ auth_type: 'oauth2' })), []);
+  // optional (non-required) properties are not forced
+  assert.deepEqual(staticCredentialProblems(entry({ auth_type: 'static', credential_schema: cs({ O: {} }, []) })), []);
+  // only added/changed entries are checked, even with allPins
+  const unchanged = entry({ name: 'old', auth_type: 'static', credential_schema: cs({ KEY: {} }, ['KEY']) });
+  assert.deepEqual(universalChecks({ baseMcps: [unchanged], headMcps: [unchanged], allPins: true }), []);
+  const e = universalChecks({ baseMcps: [], headMcps: [unchanged] });
+  assert.equal(e.length, 1);
+  assert.match(e[0], /\[old\].*env_var: KEY/);
+});
