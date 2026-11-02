@@ -46,3 +46,22 @@ test('checkEntries names the entry and dedupes lookups', async () => {
   assert.match(out.missing[0], /^\[ghost\] npm package @grafana\/mcp-server@1\.0\.0 does not exist/);
   assert.deepEqual(out.unknown, []);
 });
+
+test('invalid package names/versions are flagged and never fetched', async () => {
+  const bad = [
+    { name: 'a', config: { command: ['npx', '-y', 'Bad Name@1.0.0'] } },
+    { name: 'b', config: { command: ['npx', '-y', 'ok@1.0.0/../x'] } },
+    { name: 'c', config: { command: ['uvx', 'pkg==1.0 evil'] } },
+  ];
+  let calls = 0;
+  const r = await checkEntries(bad, async () => { calls++; return { status: 200 }; });
+  assert.equal(calls, 0);
+  assert.equal(r.missing.length, 3);
+  assert.match(r.missing[0], /not a valid npm identifier/);
+});
+
+test('checkPin refuses redirects', async () => {
+  let opts;
+  await checkPin({ runner: 'npx', name: 'p', version: '1.0.0' }, async (_u, o) => { opts = o; return { status: 200 }; });
+  assert.equal(opts.redirect, 'error');
+});
