@@ -267,14 +267,17 @@ mcps:
     properties:
       AWS_ACCESS_KEY_ID:
         type: string
+        env_var: AWS_ACCESS_KEY_ID
         title: AWS Access Key ID
         description: Your AWS Access Key ID
       AWS_SECRET_ACCESS_KEY:
         type: string
+        env_var: AWS_SECRET_ACCESS_KEY
         title: AWS Secret Access Key
         description: Your AWS Secret Access Key
       AWS_REGION:
         type: string
+        env_var: AWS_REGION
         title: AWS Region
         description: AWS region (e.g., us-west-2)
     required:
@@ -315,6 +318,7 @@ mcps:
         description: See [Getting an API key](https://github.com/brave/brave-search-mcp-server?tab=readme-ov-file#getting-an-api-key)
         title: Brave Api Key
         type: string
+        env_var: BRAVE_API_KEY
     required:
     - BRAVE_API_KEY
     type: object
@@ -347,6 +351,7 @@ mcps:
     properties:
       BRAVE_API_KEY:
         type: string
+        env_var: BRAVE_API_KEY
         title: API Key
         description: Your Brave Search API key (get one at brave.com/search/api)
     required:
@@ -427,27 +432,35 @@ mcps:
       CLICKHOUSE_PASSWORD:
         title: Clickhouse Password
         type: string
+        env_var: CLICKHOUSE_PASSWORD
       connect_timeout:
         title: Connect timeout
         type: string
+        env_var: CLICKHOUSE_CONNECT_TIMEOUT
       host:
         title: Host
         type: string
+        env_var: CLICKHOUSE_HOST
       port:
         title: Port
         type: string
+        env_var: CLICKHOUSE_PORT
       secure:
         title: Secure
         type: string
+        env_var: CLICKHOUSE_SECURE
       send_receive_timeout:
         title: Send receive timeout
         type: string
+        env_var: CLICKHOUSE_SEND_RECEIVE_TIMEOUT
       user:
         title: User
         type: string
+        env_var: CLICKHOUSE_USER
       verify:
         title: Verify
         type: string
+        env_var: CLICKHOUSE_VERIFY
     required:
     - CLICKHOUSE_PASSWORD
     type: object
@@ -479,6 +492,7 @@ mcps:
     properties:
       CLOUDFLARE_API_TOKEN:
         type: string
+        env_var: CLOUDFLARE_API_TOKEN
         title: Cloudflare API Token
         description: Your Cloudflare API token (create at dash.cloudflare.com/profile/api-tokens)
     required:
@@ -832,6 +846,7 @@ mcps:
       url:
         title: Url
         type: string
+        env_var: ES_URL
     required:
     - ES_API_KEY
     - url
@@ -905,6 +920,7 @@ mcps:
     properties:
       EVERART_API_KEY:
         type: string
+        env_var: EVERART_API_KEY
         title: EverArt API Key
         description: Your EverArt API key (get at everart.ai)
     required:
@@ -937,6 +953,7 @@ mcps:
     properties:
       EXA_API_KEY:
         type: string
+        env_var: EXA_API_KEY
         title: API Key
         description: Your Exa API key (get one at exa.ai)
     required:
@@ -973,6 +990,7 @@ mcps:
       API_ACCESS_TOKEN:
         title: Api Access Token
         type: string
+        env_var: EXPLORIUM_API_KEY
     required:
     - API_ACCESS_TOKEN
     type: object
@@ -1041,6 +1059,7 @@ mcps:
     properties:
       FIGMA_ACCESS_TOKEN:
         type: string
+        env_var: FIGMA_API_KEY
         title: Figma Access Token
         description: Your Figma personal access token (generate at figma.com/developers)
     required:
@@ -1099,6 +1118,7 @@ mcps:
     properties:
       FIRECRAWL_API_KEY:
         type: string
+        env_var: FIRECRAWL_API_KEY
         title: API Key
         description: Your Firecrawl API key (get one at firecrawl.dev)
     required:
@@ -1143,14 +1163,17 @@ mcps:
       FIREWALLA_MSP_TOKEN:
         title: Firewalla Msp Token
         type: string
+        env_var: FIREWALLA_MSP_TOKEN
       box_id:
         description: Your Firewalla Box Global ID
         title: Box id
         type: string
+        env_var: FIREWALLA_BOX_ID
       msp_id:
         description: Your Firewalla MSP domain (e.g., yourdomain.firewalla.net)
         title: Msp id
         type: string
+        env_var: FIREWALLA_MSP_ID
     required:
     - FIREWALLA_MSP_TOKEN
     type: object
@@ -1252,6 +1275,7 @@ mcps:
     properties:
       GITLAB_TOKEN:
         type: string
+        env_var: GITLAB_PERSONAL_ACCESS_TOKEN
         title: GitLab Token
         description: Your GitLab personal access token (create at gitlab.com/-/user_settings/personal_access_tokens)
     required:
@@ -1336,6 +1360,7 @@ mcps:
     properties:
       GOOGLE_MAPS_API_KEY:
         type: string
+        env_var: GOOGLE_MAPS_API_KEY
         title: Google Maps API Key
         description: Your Google Maps API key (get at console.cloud.google.com)
     required:
@@ -1465,6 +1490,7 @@ mcps:
     properties:
       LINEAR_API_KEY:
         type: string
+        env_var: LINEAR_API_KEY
         title: Linear API Key
         description: Your Linear API key (create at linear.app/settings/api)
     required:
@@ -1570,6 +1596,7 @@ mcps:
         description: You can obtain a token from the [Discord Developer Portal](https://discord.com/developers/applications)
         title: Discord Token
         type: string
+        env_var: DISCORD_TOKEN
     required:
     - DISCORD_TOKEN
     type: object
@@ -1715,15 +1742,19 @@ mcps:
       METABASE_API_KEY:
         title: Metabase Api Key
         type: string
+        env_var: METABASE_API_KEY
       METABASE_PASSWORD:
         title: Metabase Password
         type: string
+        env_var: METABASE_PASSWORD
       metabaseurl:
         title: Metabaseurl
         type: string
+        env_var: METABASE_URL
       metabaseusername:
         title: Metabaseusername
         type: string
+        env_var: METABASE_USERNAME
     required:
     - METABASE_API_KEY
     - METABASE_PASSWORD
@@ -1830,11 +1861,13 @@ mcps:
       N8N_API_KEY:
         title: N8n Api Key
         type: string
+        env_var: N8N_API_KEY
       api_url:
         description: The URL of your n8n instance (use http://host.docker.internal:5678
           for local instances)
         title: Api url
         type: string
+        env_var: N8N_API_URL
     required:
     - N8N_API_KEY
     type: object
@@ -1941,6 +1974,7 @@ mcps:
       OWM_API_KEY:
         title: Owm Api Key
         type: string
+        env_var: OPENWEATHER_API_KEY
     required:
     - OWM_API_KEY
     type: object
@@ -2024,9 +2058,11 @@ mcps:
       OXYLABS_PASSWORD:
         title: Oxylabs Password
         type: string
+        env_var: OXYLABS_PASSWORD
       username:
         title: Username
         type: string
+        env_var: OXYLABS_USERNAME
     required:
     - OXYLABS_PASSWORD
     - username
@@ -2098,11 +2134,13 @@ mcps:
       PLUGGEDIN_API_KEY:
         title: Pluggedin Api Key
         type: string
+        env_var: PLUGGEDIN_API_KEY
       pluggedin_api_base_url:
         description: Base URL for the Plugged.in API (optional, defaults to https://plugged.in
           for cloud or http://localhost:12005 for self-hosted)
         title: Pluggedin api base url
         type: string
+        env_var: PLUGGEDIN_API_BASE_URL
     required:
     - PLUGGEDIN_API_KEY
     type: object
@@ -2175,6 +2213,7 @@ mcps:
       POSTMAN_API_KEY:
         title: Postman Api Key
         type: string
+        env_var: POSTMAN_API_KEY
     required:
     - POSTMAN_API_KEY
     type: object
@@ -2252,6 +2291,7 @@ mcps:
       PULUMI_ACCESS_TOKEN:
         title: Pulumi Access Token
         type: string
+        env_var: PULUMI_ACCESS_TOKEN
     required:
     - PULUMI_ACCESS_TOKEN
     type: object
@@ -2410,6 +2450,7 @@ mcps:
       REF_API_KEY:
         title: Ref Api Key
         type: string
+        env_var: REF_API_KEY
     required:
     - REF_API_KEY
     type: object
@@ -2575,6 +2616,7 @@ mcps:
     properties:
       SLACK_BOT_TOKEN:
         type: string
+        env_var: SLACK_BOT_TOKEN
         title: Bot OAuth Token
         description: Your Slack Bot OAuth token (create at api.slack.com/apps)
     required:
@@ -2620,16 +2662,19 @@ mcps:
       SONARQUBE_TOKEN:
         title: Sonarqube Token
         type: string
+        env_var: SONARQUBE_TOKEN
       org:
         description: Organization key for SonarQube Cloud, not required for SonarQube
           Server or Community Build
         title: Org
         type: string
+        env_var: SONARQUBE_ORGANIZATION
       url:
         description: URL of the SonarQube instance, to provide only for SonarQube
           Server or Community Build
         title: Url
         type: string
+        env_var: SONARQUBE_URL
     required:
     - SONARQUBE_TOKEN
     type: object
@@ -2689,6 +2734,7 @@ mcps:
       STACKHAWK_API_KEY:
         title: Stackhawk Api Key
         type: string
+        env_var: STACKHAWK_API_KEY
     required:
     - STACKHAWK_API_KEY
     type: object
@@ -2725,6 +2771,7 @@ mcps:
     properties:
       STRIPE_SECRET_KEY:
         type: string
+        env_var: STRIPE_SECRET_KEY
         title: Stripe Secret Key
         description: Your Stripe secret key (find at dashboard.stripe.com/apikeys)
     required:
@@ -2789,6 +2836,7 @@ mcps:
       TAVILY_API_KEY:
         title: Tavily Api Key
         type: string
+        env_var: TAVILY_API_KEY
     required:
     - TAVILY_API_KEY
     type: object
@@ -2820,6 +2868,7 @@ mcps:
     properties:
       TAVILY_API_KEY:
         type: string
+        env_var: TAVILY_API_KEY
         title: API Key
         description: Your Tavily API key (get one at tavily.com)
     required:
@@ -2921,26 +2970,32 @@ mcps:
         description: API key for your GraphQL service
         title: Graphql Api Key
         type: string
+        env_var: GRAPHQL_API_KEY
       GRAPHQL_ENDPOINT:
         description: GraphQL API endpoint URL
         title: Graphql Endpoint
         type: string
+        env_var: GRAPHQL_ENDPOINT
       OPENAI_API_KEY:
         description: OpenAI API key for LLM operations
         title: Openai Api Key
         type: string
+        env_var: OPENAI_API_KEY
       graphql_auth_type:
         description: Authentication method for GraphQL API
         title: Graphql auth type
         type: string
+        env_var: GRAPHQL_AUTH_TYPE
       model_name:
         description: OpenAI model to use
         title: Model name
         type: string
+        env_var: MODEL_NAME
       model_temperature:
         description: Model temperature for responses
         title: Model temperature
         type: number
+        env_var: MODEL_TEMPERATURE
     required:
     - OPENAI_API_KEY
     - GRAPHQL_ENDPOINT
@@ -2981,6 +3036,7 @@ mcps:
     properties:
       TODOIST_API_TOKEN:
         type: string
+        env_var: TODOIST_API_TOKEN
         title: Todoist API Token
         description: Your Todoist API token (find at todoist.com/app/settings/integrations/developer)
     required:
