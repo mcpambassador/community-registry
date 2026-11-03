@@ -178,6 +178,13 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
       errors.push(`[${m.name}] auth_type static: credential propert(ies) whose key is not an env var name and have no env_var: ${names}`);
     }
   }
+  // TD-074: changed/added npx entries must carry package_integrity.npm (node scripts/sync-official/pin-integrity.mjs --write).
+  for (const m of [...added, ...changed]) {
+    const p = packageArg(m.config?.command);
+    if (p?.runner === 'npx' && typeof p.arg === 'string' && NPM_PIN.test(p.arg) && !m.package_integrity?.npm) {
+      errors.push(`[${m.name}] npm package ${p.arg} has no package_integrity.npm (run scripts/sync-official/pin-integrity.mjs --write)`);
+    }
+  }
   return errors;
 }
 

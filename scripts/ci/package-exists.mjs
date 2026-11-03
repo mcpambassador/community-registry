@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // TD-038: every pinned npx/uvx package@version in registry.yaml must exist on its index
 // (registry.npmjs.org for npx, pypi.org for uvx). Guards against dependency squatting on names that
-// were never published. Read-only, anonymous, Node 20 built-ins only.
+// were never published, and (TD-074) that package_integrity.npm matches the index. Read-only, anonymous, Node 20 built-ins only.
 //
 //   node scripts/ci/package-exists.mjs --head registry.yaml --base <base registry.yaml>   (changed/added entries)
 //   node scripts/ci/package-exists.mjs --head registry.yaml --all                          (every entry)
@@ -57,7 +57,14 @@ export async function checkPin(pin, fetchImpl = globalThis.fetch, { timeoutMs = 
     const timer = setTimeout(() => ac.abort(), timeoutMs);
     try {
       const res = await fetchImpl(url, { signal: ac.signal, headers: { accept: 'application/json' }, redirect: 'error' });
-      if (res.status === 200) return { status: 'found' };
+      if (res.status === 200) {
+        // TD-074: npm's version document carries dist.integrity (sha512 SRI); callers compare it to the registry pin.
+        let integrity;
+        if (pin.runner === 'npx' && typeof res.json === 'function') {
+          try { const i = (await res.json())?.dist?.integrity; if (typeof i === 'string') integrity = i; } catch { /* body unreadable: existence is still proven */ }
+        }
+        return { status: 'found', integrity };
+      }
       if (res.status === 404) return { status: 'missing' };
       detail = `HTTP ${res.status}`;
     } catch (e) {
@@ -89,6 +96,9 @@ export async function checkEntries(entries, fetchImpl) {
     const label = `[${m.name}] ${pin.runner === 'npx' ? 'npm' : 'PyPI'} package ${pin.name}@${pin.version}`;
     if (r.status === 'missing') out.missing.push(`${label} does not exist on the index (404); a name nobody published can be registered by anyone`);
     else if (r.status === 'unknown') out.unknown.push(`${label} could not be verified (${r.detail})`);
+    else if (pin.runner === 'npx' && m.package_integrity?.npm && r.integrity && m.package_integrity.npm !== r.integrity) {
+      out.missing.push(`${label} package_integrity.npm does not match the npm index (registry ${m.package_integrity.npm.slice(0, 24)}…, index ${r.integrity.slice(0, 24)}…); re-run scripts/sync-official/pin-integrity.mjs or investigate a republished version`);
+    }
   }
   return out;
 }
