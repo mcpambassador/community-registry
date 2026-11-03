@@ -175,47 +175,70 @@ mcps:
   version: 1.0.0
 - name: atlassian
   display_name: Atlassian
-  description: Jira and Confluence tools for an Atlassian Cloud site, using an account email and API token.
+  description: Jira and Confluence tools (sooperset/mcp-atlassian) for Atlassian Cloud using an account email and API token. Jira is required here; Confluence settings are optional.
   icon_url: https://avatars.githubusercontent.com/u/43281909?s=200&v=4
   transport_type: stdio
   config:
     command:
-    - npx
-    - -y
-    - mcp-atlassian@2.1.0
+    - uvx
+    - mcp-atlassian==0.23.1
     env_vars:
-    - name: ATLASSIAN_BASE_URL
-      description: Atlassian Cloud site URL, e.g. https://your-company.atlassian.net
+    - name: JIRA_URL
+      description: Jira Cloud URL, e.g. https://your-company.atlassian.net
       required: true
-    - name: ATLASSIAN_EMAIL
+    - name: JIRA_USERNAME
       description: Atlassian account email
       required: true
-    - name: ATLASSIAN_API_TOKEN
+    - name: JIRA_API_TOKEN
       description: Atlassian API token
       required: true
+    - name: CONFLUENCE_URL
+      description: Confluence Cloud URL, e.g. https://your-company.atlassian.net/wiki
+      required: false
+    - name: CONFLUENCE_USERNAME
+      description: Atlassian account email (Confluence)
+      required: false
+    - name: CONFLUENCE_API_TOKEN
+      description: Atlassian API token (Confluence)
+      required: false
   auth_type: static
   requires_user_credentials: true
   credential_schema:
     properties:
-      ATLASSIAN_BASE_URL:
-        title: Atlassian Base URL
-        description: Atlassian Cloud site URL, e.g. https://your-company.atlassian.net
+      JIRA_URL:
+        title: Jira URL
+        description: Jira Cloud URL, e.g. https://your-company.atlassian.net
         type: string
-        env_var: ATLASSIAN_BASE_URL
-      ATLASSIAN_EMAIL:
-        title: Atlassian Email
-        description: Email of the Atlassian account that owns the API token
+        env_var: JIRA_URL
+      JIRA_USERNAME:
+        title: Jira Username
+        description: Atlassian account email
         type: string
-        env_var: ATLASSIAN_EMAIL
-      ATLASSIAN_API_TOKEN:
-        title: Atlassian API Token
+        env_var: JIRA_USERNAME
+      JIRA_API_TOKEN:
+        title: Jira API Token
         description: API token from id.atlassian.com/manage-profile/security/api-tokens
         type: string
-        env_var: ATLASSIAN_API_TOKEN
+        env_var: JIRA_API_TOKEN
+      CONFLUENCE_URL:
+        title: Confluence URL
+        description: Confluence Cloud URL, e.g. https://your-company.atlassian.net/wiki
+        type: string
+        env_var: CONFLUENCE_URL
+      CONFLUENCE_USERNAME:
+        title: Confluence Username
+        description: Atlassian account email (Confluence)
+        type: string
+        env_var: CONFLUENCE_USERNAME
+      CONFLUENCE_API_TOKEN:
+        title: Confluence API Token
+        description: API token (Confluence)
+        type: string
+        env_var: CONFLUENCE_API_TOKEN
     required:
-    - ATLASSIAN_BASE_URL
-    - ATLASSIAN_EMAIL
-    - ATLASSIAN_API_TOKEN
+    - JIRA_URL
+    - JIRA_USERNAME
+    - JIRA_API_TOKEN
     type: object
   isolation_mode: per_user
   tags:
@@ -223,10 +246,14 @@ mcps:
   - confluence
   - jira
   category: Productivity
-  repository_url: https://github.com/Vijay-Duke/mcp-atlassian
+  repository_url: https://github.com/sooperset/mcp-atlassian
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 2c00820dabb6d39d9356025a52689cbc411ec4f7d7dd87a64589099084da471a
+    - 6b57391928887f5334fe854073b09e3a49bb7dae0d55a1b1276f4d910607a0f1
 - name: aws-kb-retrieval
   display_name: AWS Knowledge Base
   description: Retrieve information from AWS Bedrock Knowledge Bases. Query knowledge
