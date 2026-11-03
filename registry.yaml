@@ -23,9 +23,6 @@ mcps:
     - name: AIRTABLE_API_KEY
       description: Airtable Api Key
       required: true
-    - name: nodeenv
-      description: Nodeenv
-      required: false
   auth_type: static
   requires_user_credentials: true
   credential_schema:
@@ -33,9 +30,7 @@ mcps:
       AIRTABLE_API_KEY:
         title: Airtable Api Key
         type: string
-      nodeenv:
-        title: Nodeenv
-        type: string
+        env_var: AIRTABLE_API_KEY
     required:
     - AIRTABLE_API_KEY
     type: object
@@ -180,61 +175,70 @@ mcps:
   version: 1.0.0
 - name: atlassian
   display_name: Atlassian
-  description: Tools for Atlassian products (Confluence and Jira). This integration
-    supports both Atlassian Cloud and Jira Server/Data Center deployments.
+  description: Jira and Confluence tools (sooperset/mcp-atlassian) for Atlassian Cloud using an account email and API token. Jira is required here; Confluence settings are optional.
   icon_url: https://avatars.githubusercontent.com/u/43281909?s=200&v=4
   transport_type: stdio
   config:
     command:
-    - npx
-    - -y
-    - mcp-atlassian@2.1.0
+    - uvx
+    - mcp-atlassian==0.23.1
     env_vars:
-    - name: CONFLUENCE_API_TOKEN
-      description: Confluence Api Token
+    - name: JIRA_URL
+      description: Jira Cloud URL, e.g. https://your-company.atlassian.net
       required: true
-    - name: CONFLUENCE_PERSONAL_TOKEN
-      description: Confluence Personal Token
+    - name: JIRA_USERNAME
+      description: Atlassian account email
       required: true
     - name: JIRA_API_TOKEN
-      description: Jira Api Token
+      description: Atlassian API token
       required: true
-    - name: JIRA_PERSONAL_TOKEN
-      description: Jira Personal Token
-      required: true
-    - name: confluence
-      description: Confluence
+    - name: CONFLUENCE_URL
+      description: Confluence Cloud URL, e.g. https://your-company.atlassian.net/wiki
       required: false
-    - name: jira
-      description: Jira
+    - name: CONFLUENCE_USERNAME
+      description: Atlassian account email (Confluence)
+      required: false
+    - name: CONFLUENCE_API_TOKEN
+      description: Atlassian API token (Confluence)
       required: false
   auth_type: static
   requires_user_credentials: true
   credential_schema:
     properties:
-      CONFLUENCE_API_TOKEN:
-        title: Confluence Api Token
+      JIRA_URL:
+        title: Jira URL
+        description: Jira Cloud URL, e.g. https://your-company.atlassian.net
         type: string
-      CONFLUENCE_PERSONAL_TOKEN:
-        title: Confluence Personal Token
+        env_var: JIRA_URL
+      JIRA_USERNAME:
+        title: Jira Username
+        description: Atlassian account email
         type: string
+        env_var: JIRA_USERNAME
       JIRA_API_TOKEN:
-        title: Jira Api Token
+        title: Jira API Token
+        description: API token from id.atlassian.com/manage-profile/security/api-tokens
         type: string
-      JIRA_PERSONAL_TOKEN:
-        title: Jira Personal Token
+        env_var: JIRA_API_TOKEN
+      CONFLUENCE_URL:
+        title: Confluence URL
+        description: Confluence Cloud URL, e.g. https://your-company.atlassian.net/wiki
         type: string
-      confluence:
-        title: Confluence
-        type: object
-      jira:
-        title: Jira
-        type: object
+        env_var: CONFLUENCE_URL
+      CONFLUENCE_USERNAME:
+        title: Confluence Username
+        description: Atlassian account email (Confluence)
+        type: string
+        env_var: CONFLUENCE_USERNAME
+      CONFLUENCE_API_TOKEN:
+        title: Confluence API Token
+        description: API token (Confluence)
+        type: string
+        env_var: CONFLUENCE_API_TOKEN
     required:
-    - CONFLUENCE_API_TOKEN
-    - CONFLUENCE_PERSONAL_TOKEN
+    - JIRA_URL
+    - JIRA_USERNAME
     - JIRA_API_TOKEN
-    - JIRA_PERSONAL_TOKEN
     type: object
   isolation_mode: per_user
   tags:
@@ -246,6 +250,10 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    pypi:
+    - 2c00820dabb6d39d9356025a52689cbc411ec4f7d7dd87a64589099084da471a
+    - 6b57391928887f5334fe854073b09e3a49bb7dae0d55a1b1276f4d910607a0f1
 - name: aws-kb-retrieval
   display_name: AWS Knowledge Base
   description: Retrieve information from AWS Bedrock Knowledge Bases. Query knowledge
@@ -508,90 +516,6 @@ mcps:
   maintainer: Cloudflare
   verified: true
   version: 1.0.0
-- name: cockroachdb
-  display_name: CockroachDB
-  description: Enable AI agents to manage, monitor, and query CockroachDB using natural
-    language. Perform complex database operations, cluster management, and query execution
-    seamlessly through AI-driven workflows. Integrate effortlessly with MCP clients
-    for scalable and high-performance data operations.
-  icon_url: https://avatars.githubusercontent.com/u/6748139?v=4
-  transport_type: stdio
-  config:
-    command:
-    - npx
-    - -y
-    - mcp-server-cockroachdb@0.0.1
-    env_vars:
-    - name: CRDB_PWD
-      description: Crdb Pwd
-      required: true
-    - name: ca_path
-      description: Ca path
-      required: false
-    - name: database
-      description: Database
-      required: false
-    - name: host
-      description: Host
-      required: false
-    - name: port
-      description: Port
-      required: false
-    - name: ssl_certfile
-      description: Ssl certfile
-      required: false
-    - name: ssl_keyfile
-      description: Ssl keyfile
-      required: false
-    - name: ssl_mode
-      description: Ssl mode
-      required: false
-    - name: username
-      description: Username
-      required: false
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      CRDB_PWD:
-        title: Crdb Pwd
-        type: string
-      ca_path:
-        title: Ca path
-        type: string
-      database:
-        title: Database
-        type: string
-      host:
-        title: Host
-        type: string
-      port:
-        title: Port
-        type: integer
-      ssl_certfile:
-        title: Ssl certfile
-        type: string
-      ssl_keyfile:
-        title: Ssl keyfile
-        type: string
-      ssl_mode:
-        title: Ssl mode
-        type: string
-      username:
-        title: Username
-        type: string
-    required:
-    - CRDB_PWD
-    type: object
-  isolation_mode: per_user
-  tags:
-  - cockroachdb
-  - database
-  category: Data & Search
-  repository_url: https://github.com/amineelkouhen/mcp-cockroachdb
-  maintainer: Community
-  verified: false
-  version: 1.0.0
 - name: context7
   display_name: Context7
   description: Up-to-date documentation and code examples for any library. Powered
@@ -630,18 +554,14 @@ mcps:
     - name: CB_PASSWORD
       description: Password for the Couchbase cluster with access to the bucket.
       required: true
-    - name: cb_bucket_name
-      description: Bucket in the Couchbase cluster to use for the MCP server.
-      required: false
-    - name: cb_connection_string
+    - name: CB_CONNECTION_STRING
       description: Connection string for the Couchbase cluster.
-      required: false
-    - name: cb_mcp_read_only_query_mode
-      description: Setting to "true" (default) enables read-only query mode while
-        running SQL++ queries.
-      required: false
-    - name: cb_username
+      required: true
+    - name: CB_USERNAME
       description: Username for the Couchbase cluster with access to the bucket.
+      required: true
+    - name: CB_MCP_READ_ONLY_MODE
+      description: Setting to "true" (default) enables read-only mode; set "false" to allow write operations.
       required: false
   auth_type: static
   requires_user_credentials: true
@@ -651,25 +571,26 @@ mcps:
         description: Password for the Couchbase cluster with access to the bucket.
         title: Cb Password
         type: string
-      cb_bucket_name:
-        description: Bucket in the Couchbase cluster to use for the MCP server.
-        title: Cb bucket name
-        type: string
+        env_var: CB_PASSWORD
       cb_connection_string:
         description: Connection string for the Couchbase cluster.
         title: Cb connection string
         type: string
+        env_var: CB_CONNECTION_STRING
       cb_mcp_read_only_query_mode:
-        description: Setting to "true" (default) enables read-only query mode while
-          running SQL++ queries.
-        title: Cb mcp read only query mode
+        description: Setting to "true" (default) enables read-only mode; set "false" to allow write operations.
+        title: Cb mcp read only mode
         type: string
+        env_var: CB_MCP_READ_ONLY_MODE
       cb_username:
         description: Username for the Couchbase cluster with access to the bucket.
         title: Cb username
         type: string
+        env_var: CB_USERNAME
     required:
     - CB_PASSWORD
+    - cb_connection_string
+    - cb_username
     type: object
   isolation_mode: per_user
   tags:
@@ -732,51 +653,6 @@ mcps:
     pypi:
     - 49fd9cd9e293db21641e81d769864b632fd78f4e6b266c54483fe744d3cce9d3
     - e3d50a62725c79cf46c4030ef4c434201940fc2b797fe9cdd3d5069d90454aff
-- name: descope
-  display_name: Descope
-  description: The Descope Model Context Protocol (MCP) server provides an interface
-    to interact with Descope's Management APIs, enabling the search and retrieval
-    of project-related information.
-  icon_url: https://avatars.githubusercontent.com/u/119703169?s=200&v=4
-  transport_type: stdio
-  config:
-    command:
-    - uvx
-    - descope-mcp==0.1.0
-    env_vars:
-    - name: DESCOPE_MANAGEMENT_KEY
-      description: Descope Management Key
-      required: true
-    - name: project_id
-      description: Project id
-      required: true
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      DESCOPE_MANAGEMENT_KEY:
-        title: Descope Management Key
-        type: string
-      project_id:
-        title: Project id
-        type: string
-    required:
-    - DESCOPE_MANAGEMENT_KEY
-    - project_id
-    type: object
-  isolation_mode: per_user
-  tags:
-  - descope
-  - devops
-  category: Developer Tools
-  repository_url: https://github.com/descope-sample-apps/descope-mcp-server
-  maintainer: Community
-  verified: false
-  version: 1.0.0
-  package_integrity:
-    pypi:
-    - 0af5d750ebea795acd04bbd77e4d8cfab3b1000584ad1ce089e3f36dd3c19545
-    - 167708e947074a2a20acc9bb5e03d0aa8ce788a0ea8128d202661eb9bb4772bd
 - name: docker
   display_name: Docker
   description: Manage Docker containers, images, volumes, and networks. List, start,
@@ -857,47 +733,6 @@ mcps:
   - search
   category: Data & Search
   repository_url: https://github.com/elastic/mcp-server-elasticsearch
-  maintainer: Community
-  verified: false
-  version: 1.0.0
-- name: elevenlabs
-  display_name: ElevenLabs
-  description: Official ElevenLabs Model Context Protocol (MCP) server that enables
-    interaction with powerful Text to Speech and audio processing APIs.
-  icon_url: https://avatars.githubusercontent.com/u/94471909?v=4
-  transport_type: stdio
-  config:
-    command:
-    - npx
-    - -y
-    - mcp-server-elevenlabs@0.0.1
-    env_vars:
-    - name: ELEVENLABS_API_KEY
-      description: Elevenlabs Api Key
-      required: true
-    - name: data
-      description: Data
-      required: true
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      ELEVENLABS_API_KEY:
-        title: Elevenlabs Api Key
-        type: string
-      data:
-        title: Data
-        type: string
-    required:
-    - ELEVENLABS_API_KEY
-    - data
-    type: object
-  isolation_mode: per_user
-  tags:
-  - elevenlabs
-  - elevenlabs-api
-  category: AI & Reasoning
-  repository_url: https://github.com/elevenlabs/elevenlabs-mcp
   maintainer: Community
   verified: false
   version: 1.0.0
@@ -1050,8 +885,6 @@ mcps:
     - npx
     - -y
     - figma-mcp-server@2.1.1
-    env:
-      FIGMA_ACCESS_TOKEN: ${FIGMA_ACCESS_TOKEN}
   auth_type: static
   requires_user_credentials: true
   credential_schema:
@@ -1266,8 +1099,6 @@ mcps:
     - npx
     - -y
     - '@modelcontextprotocol/server-gitlab@2025.4.25'
-    env:
-      GITLAB_TOKEN: ${GITLAB_TOKEN}
   auth_type: static
   requires_user_credentials: true
   credential_schema:
@@ -1291,56 +1122,6 @@ mcps:
   version: 2025.4.25
   maintainer: MCP Project
   verified: true
-- name: gmail-mcp
-  display_name: Gmail
-  description: A Model Context Protocol server for Gmail operations using IMAP/SMTP
-    with app password authentication. Supports listing messages, searching emails,
-    and sending messages. To create your app password, visit your Google Account settings
-    under Security > App Passwords. Or visit the link https://myaccount.google.com/apppasswords
-  icon_url: https://www.google.com/gmail/about/static/images/logo-gmail.png
-  transport_type: stdio
-  config:
-    command:
-    - uvx
-    - Gmail-MCP==0.1.3
-    env_vars:
-    - name: EMAIL_PASSWORD
-      description: Email Password
-      required: true
-    - name: email_address
-      description: Your Gmail email address
-      required: true
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      EMAIL_PASSWORD:
-        title: Email Password
-        type: string
-      email_address:
-        description: Your Gmail email address
-        title: Email address
-        type: string
-    required:
-    - EMAIL_PASSWORD
-    - email_address
-    type: object
-  isolation_mode: per_user
-  tags:
-  - email
-  - gmail
-  - imap
-  - smtp
-  - communication
-  category: Productivity
-  repository_url: https://github.com/Sallytion/Gmail-MCP
-  maintainer: Community
-  verified: false
-  version: 1.0.0
-  package_integrity:
-    pypi:
-    - 3e069de8e2b6957e38e52d67f23f967c04e4fc2901e9595b43fd6e449d43849a
-    - 967e622f7c09460316783c66361dd569c3ffb2857427fb959b72772727b06f12
 - name: google-maps
   display_name: Google Maps
   description: Access Google Maps services. Geocode addresses, calculate directions,
@@ -1615,53 +1396,20 @@ mcps:
     - f3cc68016a2a2ef02b45fd4e9720ff2f60c2570265af5543ad810cb920b9b373
 - name: mcp-reddit
   display_name: Reddit
-  description: This server provides AI agents with tools to fetch, post and search
-    on Reddit.
+  description: Scrapes public Reddit posts, comments and user history. No API keys required.
   icon_url: https://www.google.com/s2/favicons?domain=reddit.com&sz=64
   transport_type: stdio
   config:
     command:
     - uvx
     - mcp-reddit==0.4.0
-    env_vars:
-    - name: REDDIT_CLIENT_ID
-      description: Reddit Client Id
-      required: true
-    - name: REDDIT_CLIENT_SECRET
-      description: Reddit Client Secret
-      required: true
-    - name: REDDIT_PASSWORD
-      description: Reddit Password
-      required: true
-    - name: username
-      description: Username
-      required: false
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      REDDIT_CLIENT_ID:
-        title: Reddit Client Id
-        type: string
-      REDDIT_CLIENT_SECRET:
-        title: Reddit Client Secret
-        type: string
-      REDDIT_PASSWORD:
-        title: Reddit Password
-        type: string
-      username:
-        title: Username
-        type: string
-    required:
-    - REDDIT_CLIENT_ID
-    - REDDIT_CLIENT_SECRET
-    - REDDIT_PASSWORD
-    type: object
+  auth_type: none
+  requires_user_credentials: false
   isolation_mode: per_user
   tags:
   - communication
   category: Productivity
-  repository_url: https://github.com/KrishnaRandad2023/mcp-reddit
+  repository_url: https://github.com/namanxajmera/mcp-reddit
   maintainer: Community
   verified: false
   version: 1.0.0
@@ -1986,54 +1734,6 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
-- name: oracle
-  display_name: Oracle Database
-  description: Connect to Oracle databases via MCP, providing secure read-only access
-    with support for schema exploration, query execution, and metadata inspection
-  icon_url: https://avatars.githubusercontent.com/u/93792006?v=4
-  transport_type: stdio
-  config:
-    command:
-    - npx
-    - -y
-    - oracle-mcp@1.0.1
-    env_vars:
-    - name: ORACLE_PASSWORD
-      description: Oracle Password
-      required: true
-    - name: oracle_connection_string
-      description: Oracle connection string
-      required: false
-    - name: oracle_user
-      description: Oracle user
-      required: false
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      ORACLE_PASSWORD:
-        title: Oracle Password
-        type: string
-      oracle_connection_string:
-        title: Oracle connection string
-        type: string
-      oracle_user:
-        title: Oracle user
-        type: string
-    required:
-    - ORACLE_PASSWORD
-    type: object
-  isolation_mode: per_user
-  tags:
-  - oracle
-  - database
-  - sql
-  - enterprise
-  category: Data & Search
-  repository_url: https://github.com/samscarrow/oracle-mcp-server
-  maintainer: Community
-  verified: false
-  version: 1.0.0
 - name: oxylabs
   display_name: Oxylabs
   description: A Model Context Protocol (MCP) server that enables AI assistants like
@@ -2334,99 +2034,6 @@ mcps:
   deprecated: true
   deprecation_note: Upstream package is deprecated. Consider using the Playwright
     MCP server instead.
-- name: redis
-  display_name: Redis
-  description: Access to Redis database operations.
-  icon_url: https://avatars.githubusercontent.com/u/1529926?v=4
-  transport_type: stdio
-  config:
-    command:
-    - npx
-    - -y
-    - '@modelcontextprotocol/server-redis@2025.4.25'
-    env_vars:
-    - name: REDIS_PWD
-      description: Redis Pwd
-      required: true
-    - name: ca_certs
-      description: Ca certs
-      required: false
-    - name: ca_path
-      description: Ca path
-      required: false
-    - name: cert_reqs
-      description: Cert reqs
-      required: false
-    - name: cluster_mode
-      description: Cluster mode
-      required: false
-    - name: host
-      description: Host
-      required: false
-    - name: port
-      description: Port
-      required: false
-    - name: ssl
-      description: Ssl
-      required: false
-    - name: ssl_certfile
-      description: Ssl certfile
-      required: false
-    - name: ssl_keyfile
-      description: Ssl keyfile
-      required: false
-    - name: username
-      description: Username
-      required: false
-  auth_type: static
-  requires_user_credentials: true
-  credential_schema:
-    properties:
-      REDIS_PWD:
-        title: Redis Pwd
-        type: string
-      ca_certs:
-        title: Ca certs
-        type: string
-      ca_path:
-        title: Ca path
-        type: string
-      cert_reqs:
-        title: Cert reqs
-        type: string
-      cluster_mode:
-        title: Cluster mode
-        type: boolean
-      host:
-        title: Host
-        type: string
-      port:
-        title: Port
-        type: integer
-      ssl:
-        title: Ssl
-        type: boolean
-      ssl_certfile:
-        title: Ssl certfile
-        type: string
-      ssl_keyfile:
-        title: Ssl keyfile
-        type: string
-      username:
-        title: Username
-        type: string
-    required:
-    - REDIS_PWD
-    type: object
-  isolation_mode: per_user
-  tags:
-  - redis
-  - database
-  category: Data & Search
-  repository_url: https://github.com/redis/mcp-redis
-  maintainer: Community
-  verified: false
-  version: 1.0.0
 - name: ref
   display_name: Ref - Up-To-Date Docs
   description: Ref powerful search tool connets your coding tools with documentation
@@ -2542,12 +2149,12 @@ mcps:
     command:
     - npx
     - -y
-    - sequa-mcp@1.0.0
+    - '@sequa-ai/sequa-mcp@1.1.2'
     env_vars:
     - name: API_KEY
       description: Api Key
       required: true
-    - name: mcp_server_url
+    - name: MCP_SERVER_URL
       description: Mcp server url
       required: false
   auth_type: static
@@ -2557,9 +2164,11 @@ mcps:
       API_KEY:
         title: Api Key
         type: string
+        env_var: API_KEY
       mcp_server_url:
         title: Mcp server url
         type: string
+        env_var: MCP_SERVER_URL
     required:
     - API_KEY
     type: object
