@@ -196,3 +196,7 @@ Open an issue with your question, or check the [MCP Ambassador documentation](ht
 ## License
 
 By contributing, you agree that your contributions will be licensed under the Apache License 2.0.
+
+## Maintainers: bootstrapping the CI checkers (TD-055)
+
+`validate-registry.yml` runs the policy checker (`scripts/ci/check.mjs`) and the package check (`scripts/ci/package-exists.mjs`) from the PR's **base** commit. If the base has no checker, the PR's own copy runs only when a maintainer has listed that file **and the PR's head commit** in the `CHECKER_BOOTSTRAP` repository variable (Settings > Secrets and variables > Actions > Variables) as comma-separated `<path>@<head sha>` entries, for example `scripts/ci/check.mjs@0123abc…` (the full 40-character SHA of the PR head). The entry works for that one commit of a same-repo PR only: pushing again, or a PR from a fork, needs a new entry or is refused. Set it only while a reviewed PR (re)introduces the checker, and delete it once that PR has merged; the jobs warn `CHECKER_BOOTSTRAP is stale` when the variable is set but the base already has the checker. Without a matching entry the job fails closed.
