@@ -5,7 +5,7 @@
 //
 //   node scripts/ci/label-category.mjs <head registry.yaml> --base <base registry.yaml> [--print]
 //   env (unless --print): PR_NUMBER, GH_TOKEN, GH_REPO; IS_FORK=true downgrades label failures to a warning.
-//   LABEL_GH_BIN overrides the `gh` binary (tests only).
+//   LABEL_GH_BIN overrides the `gh` binary (tests only; ignored when CI=true so a PR can never swap the binary in Actions).
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { isDeepStrictEqual } from 'node:util';
@@ -44,6 +44,9 @@ export function labelsFor(head, base) {
 
 const colorOf = l => (l.startsWith('category:') ? '0075ca' : l.startsWith('transport:') ? 'e4e669' : l.startsWith('auth:') ? 'd93f0b' : 'cfd3d7');
 
+/** The `gh` binary: the LABEL_GH_BIN test hook is honoured only outside CI. */
+export const ghBin = (env = process.env) => (String(env.CI).toLowerCase() === 'true' ? 'gh' : env.LABEL_GH_BIN || 'gh');
+
 function main() {
   const file = process.argv[2];
   const bi = process.argv.indexOf('--base');
@@ -53,7 +56,7 @@ function main() {
   if (process.argv.includes('--print')) { console.log(labels.join('\n')); return; }
   const pr = process.env.PR_NUMBER;
   if (!/^\d{1,9}$/.test(pr ?? '')) throw new Error('PR_NUMBER must be a number');
-  const gh = args => execFileSync(process.env.LABEL_GH_BIN || 'gh', args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' });
+  const gh = args => execFileSync(ghBin(), args, { stdio: ['ignore', 'pipe', 'pipe'], encoding: 'utf8' });
   try {
     for (const l of labels) { try { gh(['label', 'create', l, '--color', colorOf(l)]); } catch { /* exists, or no permission: the add below decides */ } }
     gh(['pr', 'edit', pr, '--add-label', labels.join(',')]);
