@@ -749,9 +749,11 @@ mcps:
     - name: ELEVENLABS_API_KEY
       description: ElevenLabs API key.
       required: true
-    - name: ELEVENLABS_MCP_OUTPUT_MODE
-      description: 'How generated audio is returned: "files" (default), "resources" or "both".'
+    - name: ELEVENLABS_API_RESIDENCY
+      description: 'Data residency region: "us" (default), "eu-residency", "in-residency" or "sg-residency".'
       required: false
+    env:
+      ELEVENLABS_MCP_OUTPUT_MODE: resources
   auth_type: static
   requires_user_credentials: true
   credential_schema:
@@ -760,9 +762,9 @@ mcps:
         description: ElevenLabs API key.
         title: ElevenLabs API key
         type: string
-      ELEVENLABS_MCP_OUTPUT_MODE:
-        description: 'How generated audio is returned: "files" (default), "resources" or "both".'
-        title: Output mode
+      ELEVENLABS_API_RESIDENCY:
+        description: 'Data residency region: "us" (default), "eu-residency", "in-residency" or "sg-residency".'
+        title: Data residency
         type: string
     required:
     - ELEVENLABS_API_KEY
@@ -2081,7 +2083,7 @@ mcps:
     MCP server instead.
 - name: redis
   display_name: Redis
-  description: Official Redis MCP server. Manage and search data in a Redis database (strings, hashes, lists, sets, sorted sets, streams, JSON, pub/sub) from natural language.
+  description: Official Redis MCP server. Manage and search data in a Redis database (strings, hashes, lists, sets, sorted sets, streams, JSON, pub/sub) from natural language. Connects to the Redis host you supply; its documentation-search tool also calls redis.io.
   icon_url: https://avatars.githubusercontent.com/u/1529926?v=4
   transport_type: stdio
   config:
