@@ -75,6 +75,10 @@ test('validate-registry: policy checker runs from the base ref in its own job, f
   // base checker preferred; PR-supplied checker only when the PR adds it; otherwise hard failure
   assert.match(run, /if \[ -f base\/scripts\/ci\/check\.mjs \]/);
   assert.match(run, /--diff-filter=A[^\n]*\| grep -qx scripts\/ci\/check\.mjs/);
+  // TD-055: bootstrap also needs the CHECKER_BOOTSTRAP repo variable to list the checker
+  assert.match(run, /\[ "\$BOOT_OK" = yes \] && git -C head diff --diff-filter=A/);
+  assert.match(run, /\*,scripts\/ci\/check\.mjs,\*\) BOOT_OK=yes/);
+  assert.equal(policy.env.CHECKER_BOOTSTRAP, '${{ vars.CHECKER_BOOTSTRAP }}');
   assert.match(run, /::error::[\s\S]*exit 1/);
   assert.match(run, /::warning::/);
   assert.match(run, /node "\$CHECKER_DIR\/scripts\/ci\/check\.mjs"/);
@@ -86,4 +90,13 @@ test('validate-registry: policy checker runs from the base ref in its own job, f
     if (n === 'policy-checks') continue;
     for (const st of j.steps ?? []) assert.doesNotMatch(st.run ?? '', /scripts\/ci\/check\.mjs/, `${n} must not run the checker`);
   }
+});
+
+test('validate-registry: package-exists bootstrap is gated by the CHECKER_BOOTSTRAP variable too (TD-055)', () => {
+  const wf = yaml.load(fs.readFileSync(path.join(dir, 'validate-registry.yml'), 'utf8'));
+  const step = wf.jobs['package-exists'].steps.find(s => /package-exists\.mjs/.test(s.run ?? ''));
+  assert.equal(step.env.CHECKER_BOOTSTRAP, '${{ vars.CHECKER_BOOTSTRAP }}');
+  assert.match(step.run, /\*,scripts\/ci\/package-exists\.mjs,\*\) BOOT_OK=yes/);
+  assert.match(step.run, /\[ "\$BOOT_OK" = yes \] && git -C head diff --diff-filter=A/);
+  assert.match(step.run, /::error::[\s\S]*exit 1/);
 });
