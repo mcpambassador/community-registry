@@ -55,10 +55,10 @@ const entry = (integ, extra = {}) => ({ name: 'e', config: { command: ['npx', '-
 const ok = body => async () => ({ status: 200, json: async () => body });
 
 test('package-exists compares package_integrity.npm to the index', async () => {
-  assert.equal((await checkEntries([entry({ npm: SRI })], ok({ dist: { integrity: SRI } }))).missing.length, 0);
+  assert.equal((await checkEntries([entry({ npm: SRI })], ok({ dist: { integrity: SRI } }))).failed.length, 0);
   const bad = await checkEntries([entry({ npm: SRI })], ok({ dist: { integrity: 'sha512-' + 'B'.repeat(86) + '==' } }));
-  assert.match(bad.missing[0], /does not match the npm index/);
-  assert.equal((await checkEntries([entry(undefined)], ok({ dist: { integrity: SRI } }))).missing.length, 0);
+  assert.match(bad.failed[0], /does not match the npm index/);
+  assert.equal((await checkEntries([entry(undefined)], ok({ dist: { integrity: SRI } }))).failed.length, 0);
 });
 
 test('policy: changed or added npx entries need package_integrity.npm', () => {
@@ -66,4 +66,30 @@ test('policy: changed or added npx entries need package_integrity.npm', () => {
   assert.equal(errs([entry(undefined)]).length, 1);
   assert.equal(errs([entry({ npm: SRI })]).length, 0);
   assert.equal(errs([{ name: 'u', config: { command: ['uvx', 'p==1.0'] } }]).length, 0);
+});
+
+test('package-exists fails closed when a pinned digest cannot be compared', async () => {
+  const noInt = await checkEntries([entry({ npm: SRI })], ok({ dist: {} }));
+  assert.equal(noInt.unknown.length, 1);
+  assert.match(noInt.unknown[0], /no readable dist\.integrity/);
+  const unreadable = await checkEntries([entry({ npm: SRI })], async () => ({ status: 200, json: async () => { throw new Error('bad body'); } }));
+  assert.equal(unreadable.unknown.length, 1);
+});
+
+test('planIntegrity pins prerelease versions and never inserts past the last entry', async () => {
+  const reg = `mcps:
+- name: pre
+  config:
+    command:
+    - npx
+    - pkg@1.0.0-beta.1
+  version: 1.0.0
+
+trailer:
+  key: value
+`;
+  const calls = [];
+  const out = await planIntegrity(reg, { npm: async (n, v) => { calls.push(`${n}@${v}`); return { integrity: SRI }; } });
+  assert.deepEqual(calls, ['pkg@1.0.0-beta.1']);
+  assert.match(out.text, /  version: 1\.0\.0\n  package_integrity:\n    npm: sha512-A+==\n\ntrailer:\n  key: value\n$/);
 });

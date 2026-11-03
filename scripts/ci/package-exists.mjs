@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // TD-038: every pinned npx/uvx package@version in registry.yaml must exist on its index
 // (registry.npmjs.org for npx, pypi.org for uvx). Guards against dependency squatting on names that
-// were never published, and (TD-074) that package_integrity.npm matches the index. Read-only, anonymous, Node 20 built-ins only.
+// were never published, and (TD-074) that package_integrity.npm matches the index. Read-only, anonymous, Node 22 built-ins only.
 //
 //   node scripts/ci/package-exists.mjs --head registry.yaml --base <base registry.yaml>   (changed/added entries)
 //   node scripts/ci/package-exists.mjs --head registry.yaml --all                          (every entry)
@@ -77,16 +77,16 @@ export async function checkPin(pin, fetchImpl = globalThis.fetch, { timeoutMs = 
   return { status: 'unknown', detail };
 }
 
-/** Check entries; returns { missing: string[], unknown: string[], checked: number }. */
+/** Check entries; returns { failed: string[], unknown: string[], checked: number }. */
 export async function checkEntries(entries, fetchImpl) {
-  const out = { missing: [], unknown: [], checked: 0 };
+  const out = { failed: [], unknown: [], checked: 0 };
   const seen = new Map();
   for (const m of entries) {
     const pin = parsePin(m.config?.command);
     if (!pin) continue;
     if (pin.invalid) {
       out.checked++;
-      out.missing.push(`[${m.name}] pinned package name or version is not a valid ${pin.runner === 'npx' ? 'npm' : 'PyPI'} identifier; not fetched`);
+      out.failed.push(`[${m.name}] pinned package name or version is not a valid ${pin.runner === 'npx' ? 'npm' : 'PyPI'} identifier; not fetched`);
       continue;
     }
     const key = `${pin.runner}:${pin.name}@${pin.version}`;
@@ -94,10 +94,13 @@ export async function checkEntries(entries, fetchImpl) {
     const r = seen.get(key);
     out.checked++;
     const label = `[${m.name}] ${pin.runner === 'npx' ? 'npm' : 'PyPI'} package ${pin.name}@${pin.version}`;
-    if (r.status === 'missing') out.missing.push(`${label} does not exist on the index (404); a name nobody published can be registered by anyone`);
+    if (r.status === 'missing') out.failed.push(`${label} does not exist on the index (404); a name nobody published can be registered by anyone`);
     else if (r.status === 'unknown') out.unknown.push(`${label} could not be verified (${r.detail})`);
-    else if (pin.runner === 'npx' && m.package_integrity?.npm && r.integrity && m.package_integrity.npm !== r.integrity) {
-      out.missing.push(`${label} package_integrity.npm does not match the npm index (registry ${m.package_integrity.npm.slice(0, 24)}…, index ${r.integrity.slice(0, 24)}…); re-run scripts/sync-official/pin-integrity.mjs or investigate a republished version`);
+    else if (pin.runner === 'npx' && m.package_integrity?.npm && !r.integrity) {
+      // Fail closed: a pinned digest we cannot compare is not a pass.
+      out.unknown.push(`${label} has package_integrity.npm but the npm index returned no readable dist.integrity`);
+    } else if (pin.runner === 'npx' && m.package_integrity?.npm && m.package_integrity.npm !== r.integrity) {
+      out.failed.push(`${label} package_integrity.npm does not match the npm index (registry ${m.package_integrity.npm.slice(0, 24)}…, index ${r.integrity.slice(0, 24)}…); re-run scripts/sync-official/pin-integrity.mjs or investigate a republished version`);
     }
   }
   return out;
@@ -118,9 +121,9 @@ async function main() {
   const r = await checkEntries(scope);
   console.log(`package-exists: ${r.checked} pinned package(s) checked (${all ? 'all entries' : 'changed/added entries'})`);
   for (const e of r.unknown) console.warn('::warning::' + e);
-  if (r.missing.length) {
+  if (r.failed.length) {
     console.error('Package existence check FAILED:');
-    for (const e of r.missing) console.error('  ' + e);
+    for (const e of r.failed) console.error('  ' + e);
     process.exit(1);
   }
   if (r.unknown.length) {

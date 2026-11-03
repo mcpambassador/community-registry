@@ -15,12 +15,15 @@ const PYPI_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 /** Fetch JSON with timeout, size and depth caps (shared with the sync). */
 export const fetchJson = url => getJson(url);
 
-export async function lookupNpm(name, get = fetchJson) {
+/** Latest plain release of an npm package, or (with `exactVersion`) that exact version incl. prerelease/build suffixes. */
+export async function lookupNpm(name, get = fetchJson, exactVersion) {
   if (!NPM_NAME.test(name)) return { error: `invalid npm name ${name}` };
-  const r = await get(`https://registry.npmjs.org/${name.replace('/', '%2f')}/latest`);
+  const r = await get(`https://registry.npmjs.org/${name.replace('/', '%2f')}/${exactVersion === undefined ? 'latest' : encodeURIComponent(exactVersion)}`);
   if (r.status === 404) return { missing: true };
   const { version, dist } = r.json ?? {};
-  if (typeof version !== 'string' || !NPM_VERSION.test(version)) return { error: `latest of ${name} is not a plain x.y.z (${version})` };
+  if (exactVersion === undefined ? typeof version !== 'string' || !NPM_VERSION.test(version) : version !== exactVersion) {
+    return { error: `${exactVersion === undefined ? `latest of ${name} is not a plain x.y.z` : `index returned a different version for ${name}@${exactVersion}`} (${version})` };
+  }
   const integrity = dist?.integrity;
   if (typeof integrity !== 'string' || !/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(integrity)) return { error: `no sha512 integrity for ${name}@${version}` };
   return { version, integrity };

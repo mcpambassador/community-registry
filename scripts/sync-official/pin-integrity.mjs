@@ -6,18 +6,15 @@
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { getJson } from './fetch-official.mjs';
+import { lookupNpm } from './pin-existing.mjs';
+import { packageArg, NPM_PIN } from '../lib/checks.mjs';
 
-const NPM_PIN = /^(@[^/@]+\/)?[^/@]+@\d+\.\d+\.\d+$/;
-const SRI = /^sha512-[A-Za-z0-9+/]+={0,2}$/;
 const stripQuotes = s => s.replace(/^(['"])(.*)\1$/, '$2');
 
+/** Index lookup for one exact version (shared with pin-existing.mjs). */
 export async function lookupNpmVersion(name, version, get = getJson) {
-  const enc = name.startsWith('@') ? '@' + encodeURIComponent(name.slice(1).split('/')[0]) + '%2F' + encodeURIComponent(name.split('/')[1]) : encodeURIComponent(name);
-  const r = await get(`https://registry.npmjs.org/${enc}/${encodeURIComponent(version)}`);
-  if (r.status === 404) return { missing: true };
-  const integrity = r.json?.dist?.integrity;
-  if (typeof integrity !== 'string' || !SRI.test(integrity)) return { error: `no sha512 integrity for ${name}@${version}` };
-  return { integrity };
+  const r = await lookupNpm(name, get, version);
+  return r.integrity ? { integrity: r.integrity } : r;
 }
 
 /** Returns { text, added, errors }. Only touches entries whose npx package argument is an exact pin with no package_integrity.npm. */
@@ -26,15 +23,18 @@ export async function planIntegrity(text, { npm = lookupNpmVersion } = {}) {
   const starts = lines.flatMap((l, i) => (/^- name: /.test(l) ? [i] : []));
   const added = [], errors = [], inserts = [];
   for (let k = 0; k < starts.length; k++) {
-    const s = starts[k], e = k + 1 < starts.length ? starts[k + 1] : lines.length;
+    const s = starts[k];
+    // The last entry ends at the next top-level key (so a key after `mcps:` never receives inserts), not at EOF.
+    let e = k + 1 < starts.length ? starts[k + 1] : lines.length;
+    if (k + 1 === starts.length) for (let i = s + 1; i < lines.length; i++) if (/^[A-Za-z_]/.test(lines[i])) { e = i; break; }
     const name = stripQuotes(lines[s].slice('- name: '.length).trim());
     const ci = lines.slice(s, e).findIndex(l => /^ {4}command:\s*$/.test(l));
     if (ci < 0) continue;
     const items = [];
     for (let i = s + ci + 1; i < e && /^ {4}- /.test(lines[i]); i++) items.push(stripQuotes(lines[i].slice(6).trim()));
-    if (items[0] !== 'npx') continue;
-    const arg = items.slice(1).find(a => !a.startsWith('-'));
-    if (arg === undefined || !NPM_PIN.test(arg)) continue;
+    const p = packageArg(items);
+    if (p?.runner !== 'npx' || typeof p.arg !== 'string' || !NPM_PIN.test(p.arg)) continue;
+    const arg = p.arg;
     const block = lines.slice(s, e);
     const pi = block.findIndex(l => /^ {2}package_integrity:\s*$/.test(l));
     if (pi >= 0 && block.slice(pi + 1).some(l => /^ {4}npm:/.test(l))) continue;
