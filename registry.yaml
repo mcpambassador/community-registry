@@ -736,6 +736,51 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+- name: elevenlabs
+  display_name: ElevenLabs
+  description: Official ElevenLabs MCP server. Text to speech, voice cloning, audio transcription and other ElevenLabs audio APIs.
+  icon_url: https://avatars.githubusercontent.com/u/94471909?v=4
+  transport_type: stdio
+  config:
+    command:
+    - uvx
+    - elevenlabs-mcp==0.12.2
+    env_vars:
+    - name: ELEVENLABS_API_KEY
+      description: ElevenLabs API key.
+      required: true
+    - name: ELEVENLABS_MCP_OUTPUT_MODE
+      description: 'How generated audio is returned: "files" (default), "resources" or "both".'
+      required: false
+  auth_type: static
+  requires_user_credentials: true
+  credential_schema:
+    properties:
+      ELEVENLABS_API_KEY:
+        description: ElevenLabs API key.
+        title: ElevenLabs API key
+        type: string
+      ELEVENLABS_MCP_OUTPUT_MODE:
+        description: 'How generated audio is returned: "files" (default), "resources" or "both".'
+        title: Output mode
+        type: string
+    required:
+    - ELEVENLABS_API_KEY
+    type: object
+  isolation_mode: per_user
+  tags:
+  - elevenlabs
+  - text-to-speech
+  - audio
+  category: AI & Reasoning
+  repository_url: https://github.com/elevenlabs/elevenlabs-mcp
+  maintainer: Community
+  verified: false
+  version: 1.0.0
+  package_integrity:
+    pypi:
+    - 91818f25eb5134925fdd50217d4ab9597b5cc18227a769c22123387e036b96e1
+    - dbd2111ff092dc9342811dcffa6114bf5f8246f7906abd33fcd9c51ee97f0835
 - name: everart
   display_name: EverArt
   description: Generate AI images with various styles and models. Create, modify,
@@ -2034,6 +2079,85 @@ mcps:
   deprecated: true
   deprecation_note: Upstream package is deprecated. Consider using the Playwright
     MCP server instead.
+- name: redis
+  display_name: Redis
+  description: Official Redis MCP server. Manage and search data in a Redis database (strings, hashes, lists, sets, sorted sets, streams, JSON, pub/sub) from natural language.
+  icon_url: https://avatars.githubusercontent.com/u/1529926?v=4
+  transport_type: stdio
+  config:
+    command:
+    - uvx
+    - redis-mcp-server==0.5.1
+    env_vars:
+    - name: REDIS_HOST
+      description: Redis host name or IP address.
+      required: true
+    - name: REDIS_PORT
+      description: Redis port (default 6379).
+      required: false
+    - name: REDIS_USERNAME
+      description: Redis ACL username (optional).
+      required: false
+    - name: REDIS_PWD
+      description: Redis password.
+      required: false
+    - name: REDIS_SSL
+      description: Set to "true" to connect with TLS.
+      required: false
+    - name: REDIS_DB
+      description: Database number (default 0).
+      required: false
+    - name: REDIS_CLUSTER_MODE
+      description: Set to "true" for a Redis Cluster.
+      required: false
+  auth_type: static
+  requires_user_credentials: true
+  credential_schema:
+    properties:
+      REDIS_HOST:
+        description: Redis host name or IP address.
+        title: Redis host
+        type: string
+      REDIS_PORT:
+        description: Redis port (default 6379).
+        title: Redis port
+        type: string
+      REDIS_USERNAME:
+        description: Redis ACL username (optional).
+        title: Redis username
+        type: string
+      REDIS_PWD:
+        description: Redis password.
+        title: Redis password
+        type: string
+      REDIS_SSL:
+        description: Set to "true" to connect with TLS.
+        title: Use TLS
+        type: string
+      REDIS_DB:
+        description: Database number (default 0).
+        title: Redis database
+        type: string
+      REDIS_CLUSTER_MODE:
+        description: Set to "true" for a Redis Cluster.
+        title: Cluster mode
+        type: string
+    required:
+    - REDIS_HOST
+    type: object
+  isolation_mode: per_user
+  tags:
+  - redis
+  - database
+  category: Data & Search
+  repository_url: https://github.com/redis/mcp-redis
+  maintainer: Community
+  verified: false
+  version: 1.0.0
+  package_integrity:
+    pypi:
+    - 335d9089d4c87a055b362effa7fd718334ccd88b2545d93c4ed9bc2b738b3ed8
+    - c6c88b91f5c0e6c5c1e9bb5aff2edcb77bd136b7db5b9c409e90136a4e19376a
 - name: ref
   display_name: Ref - Up-To-Date Docs
   description: Ref powerful search tool connets your coding tools with documentation
