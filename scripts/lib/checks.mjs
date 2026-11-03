@@ -20,7 +20,7 @@ export function stripUnsafeText(text) {
   return String(text).replace(new RegExp(BAD_TEXT.source, 'gu'), '');
 }
 
-const NPM_PIN = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+export const NPM_PIN = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*@\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const PYPI_PIN = /^[A-Za-z0-9][A-Za-z0-9._-]*(?:\[[A-Za-z0-9,._-]+\])?==\d+(?:\.\d+)*(?:(?:\.|-|_)?(?:a|b|rc|post|dev)\d*)*(?:\+[A-Za-z0-9.]+)?$/;
 
 /** True when `sync` PR detection applies: head branch prefix OR the configured sync App as author. */
@@ -176,6 +176,13 @@ export function universalChecks({ baseMcps, headMcps, allPins = false }) {
     if (missing.length) {
       const names = missing.map(k => String(k).replace(/[^A-Za-z0-9_.-]/g, '?').slice(0, 64)).join(', ');
       errors.push(`[${m.name}] auth_type static: credential propert(ies) whose key is not an env var name and have no env_var: ${names}`);
+    }
+  }
+  // TD-074: changed/added npx entries must carry package_integrity.npm (node scripts/sync-official/pin-integrity.mjs --write).
+  for (const m of [...added, ...changed]) {
+    const p = packageArg(m.config?.command);
+    if (p?.runner === 'npx' && typeof p.arg === 'string' && NPM_PIN.test(p.arg) && !m.package_integrity?.npm) {
+      errors.push(`[${m.name}] npm package ${p.arg} has no package_integrity.npm (run scripts/sync-official/pin-integrity.mjs --write)`);
     }
   }
   return errors;

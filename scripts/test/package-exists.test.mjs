@@ -42,8 +42,8 @@ test('checkEntries names the entry and dedupes lookups', async () => {
   const out = await checkEntries(entries, async u => { urls.push(u); return res(u.includes('grafana') ? 404 : 200); });
   assert.equal(out.checked, 3);
   assert.equal(urls.length, 2);
-  assert.equal(out.missing.length, 1);
-  assert.match(out.missing[0], /^\[ghost\] npm package @grafana\/mcp-server@1\.0\.0 does not exist/);
+  assert.equal(out.failed.length, 1);
+  assert.match(out.failed[0], /^\[ghost\] npm package @grafana\/mcp-server@1\.0\.0 does not exist/);
   assert.deepEqual(out.unknown, []);
 });
 
@@ -56,8 +56,8 @@ test('invalid package names/versions are flagged and never fetched', async () =>
   let calls = 0;
   const r = await checkEntries(bad, async () => { calls++; return { status: 200 }; });
   assert.equal(calls, 0);
-  assert.equal(r.missing.length, 3);
-  assert.match(r.missing[0], /not a valid npm identifier/);
+  assert.equal(r.failed.length, 3);
+  assert.match(r.failed[0], /not a valid npm identifier/);
 });
 
 test('checkPin refuses redirects', async () => {

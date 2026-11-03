@@ -42,6 +42,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-GIVk/LlRjnGVp7DWxpeQOs8BCS5YZ/dfas2bOezTeyDv7/pFbss1smzW6jvOhlxvoqDzVjyeMMnN4piu0HDeBg==
 - name: alpaca
   display_name: Alpaca Trading
   description: Alpaca Trading and Market Data API for stocks, options and crypto - account,
@@ -173,6 +175,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-EwOAbAk8Hu518lAd/7Fdw9QzZz2RrsjKqyxh8yMYJYy3nl5RlMs1zNC3KS+npURdn5QqmLWM0agbeZEb0pJhWA==
 - name: atlassian
   display_name: Atlassian
   description: Jira and Confluence tools (sooperset/mcp-atlassian) for Atlassian Cloud using an account email and API token. Jira is required here; Confluence settings are optional.
@@ -303,6 +307,8 @@ mcps:
   maintainer: MCP Project
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-K/KOV6AW7KANDkhJLPqX6LcTRxtGDodHIp73dfwLbaoFgsel5c02fUSx+BO900g8V6vAouY5ZaNQmhBp7vQxnA==
 - name: brave
   display_name: Brave Search
   description: Search the Web for pages, images, news, videos, and more using the
@@ -339,6 +345,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-cF30TTSaKnxzaUR+bbV0GKdXHPeq83d26E26G+jHZh01BxOHv7e6hntkE5pH4BXDckedeTxFweQg/ept9coW4w==
 - name: brave-search
   display_name: Brave Search
   description: Web and local search using the Brave Search API. Get clean search results
@@ -375,6 +383,8 @@ mcps:
   version: 2.0.75
   maintainer: Brave
   verified: true
+  package_integrity:
+    npm: sha512-cF30TTSaKnxzaUR+bbV0GKdXHPeq83d26E26G+jHZh01BxOHv7e6hntkE5pH4BXDckedeTxFweQg/ept9coW4w==
 - name: browserbase
   display_name: Browserbase
   description: Allow LLMs to control a browser with Browserbase and Stagehand for
@@ -398,6 +408,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-7XuLkppqA0zsTDtDQMHAxGNOyGyP+PE8NKweaAQbe+YPDjzCfM8c25f9DFPN81aCzpW/cEe0vh2V2w1CnM6ITQ==
 - name: clickhouse
   display_name: Official ClickHouse
   description: Official ClickHouse MCP Server
@@ -481,6 +493,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-8yJY9uLckboAbgTjqduBznS8bn8MCcgXNxhdNVpN12BhjYpyFj+D8SjB32wY2eTSaAacrIGdckqoO47kP0d2sg==
 - name: cloudflare
   display_name: Cloudflare
   description: Manage Cloudflare Workers, KV storage, R2 buckets, and D1 databases.
@@ -516,6 +530,8 @@ mcps:
   maintainer: Cloudflare
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-506bCOY2ZI7AINJLULbqyDRLymLag2pRuKFGBPP1yFr9+wAfqHS9fk8UkDdUYCeU5MYdv8FUWHVhdg62cMXdXg==
 - name: context7
   display_name: Context7
   description: Up-to-date documentation and code examples for any library. Powered
@@ -540,6 +556,8 @@ mcps:
   version: 2.1.1
   maintainer: Upstash
   verified: true
+  package_integrity:
+    npm: sha512-Mq1o4N7CgIdOVyY9LOPEvNgz0Sorf2TCweESYKE5K87nrf4niIuBZCZN4t+WmOguJyhSvMwJz16toGAOLdJRdw==
 - name: couchbase
   display_name: Couchbase
   description: Couchbase is a distributed document database with a powerful search
@@ -673,6 +691,8 @@ mcps:
   - infrastructure
   category: Developer Tools
   version: 1.0.0
+  package_integrity:
+    npm: sha512-U4v5lYInCRPiouXPBiWA1tbRWmnTRfylKoONPSW0I3EzXPitao/B5MIAqU+GlYnjE/bM3gMfXWg1uw/oS9rrZQ==
 - name: duckduckgo
   display_name: DuckDuckGo
   description: Community-maintained MCP server for DuckDuckGo search. Not published
@@ -695,6 +715,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-xODLKxp3GK5nq7Oc6OFJ7uCS3El2awhKUoxlocQerjnrL1zedDVtk6cU11oCQdybnqONNvcZTMluBYgSWzfrUg==
 - name: elasticsearch
   display_name: Elasticsearch
   description: Interact with your Elasticsearch indices through natural language conversations.
@@ -736,6 +758,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-42sBrMjzpScFfOhmjDrpwq2KqjMB2mOUEeznXuIoeZMmHSPolI7vz3cUoylmjFNXkKmxES9KVqycc6nBUcx3Mg==
 - name: elevenlabs
   display_name: ElevenLabs
   description: Official ElevenLabs MCP server. Text to speech, voice cloning, audio transcription and other ElevenLabs audio APIs.
@@ -813,6 +837,8 @@ mcps:
   - creative
   category: Productivity
   version: 1.0.0
+  package_integrity:
+    npm: sha512-Uz1XW1/16gA6dcwJC5Q6thfj7VrrV2bO9hcs3eE2BTTCqkix+YcDCuDHG+cGuXjcuDbQ7WUvwIzV49Wpe6oWpw==
 - name: exa
   display_name: Exa
   description: AI-powered web search with neural search capabilities. Find relevant
@@ -849,6 +875,8 @@ mcps:
   version: 1.0.0
   maintainer: Exa
   verified: true
+  package_integrity:
+    npm: sha512-XK4gPbgfaOX5YRPKDCkdshBGnztSPvrQCzlAHJkQ+z70NsC5DzCOKJ4HvZLRt5wtBSVPbaJJug3fAjVXujJiFA==
 - name: explorium
   display_name: Explorium B2B Data
   description: Discover companies, contacts, and business insights—powered by dozens
@@ -951,6 +979,8 @@ mcps:
   documentation_url: https://www.figma.com/developers/api
   maintainer: Community
   version: 1.0.0
+  package_integrity:
+    npm: sha512-3qDzYKvPxrvHhYnjngkktni6+W5wJ7Thc3hLFnqGvPxomuWYxzfx0StiE9h9erE8DPqZ4jnOGasC/19D0gV8Jw==
 - name: filesystem
   display_name: Filesystem
   description: MCP reference server for secure file system access. Read, write, list,
@@ -976,6 +1006,8 @@ mcps:
   version: 1.0.0
   maintainer: MCP Project
   verified: true
+  package_integrity:
+    npm: sha512-bGAfu3fWRVeF10NxvPhFBDlRen6ExSx6YkKJzoVgQMNrbdVVV4okfGGQ3KBRu9ygXYfw5/N9ermHAJXA0uys+g==
 - name: firecrawl
   display_name: Firecrawl
   description: Turn websites into LLM-ready data. Scrape, crawl, and extract clean
@@ -1012,6 +1044,8 @@ mcps:
   version: 1.0.0
   maintainer: Mendable
   verified: true
+  package_integrity:
+    npm: sha512-x5kesWi+sCiZ5mToTSjHovqfzsXzDqTXVovL+FNRD4BiEpyXWKbx5khZq1or/d4MjGqbICFHpD96lU2UpFDTUA==
 - name: firewalla-mcp-server
   display_name: Firewalla
   description: Real-time network monitoring, security analysis, and firewall management
@@ -1067,6 +1101,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-glxa+rtyXivtGhEeGPCjZ/c0Qcc4McsFoGrxdBsHq3vvDyl4yJKK08EzqG9khUW1yvJV8XXA85QcGWTGuh/YTQ==
 - name: github
   display_name: GitHub
   description: GitHub's official MCP Server. Provides tools for repos, issues, PRs,
@@ -1167,6 +1203,8 @@ mcps:
   version: 2025.4.25
   maintainer: MCP Project
   verified: true
+  package_integrity:
+    npm: sha512-IQY57XkHjaIcSOWi+Qs9w8ZZMqhz5YOYOkU3v1CTbHU8rcIm/NhtX4/7XBeFRgXwRpvTuGP+WdnWg+1hH/wJdw==
 - name: google-maps
   display_name: Google Maps
   description: Access Google Maps services. Geocode addresses, calculate directions,
@@ -1202,6 +1240,8 @@ mcps:
   maintainer: MCP Project
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-XMC0zJL88wnNVNAPveztKXoqKQ8cSDvErJookZGqAKUvFZQXBuRT3Al5NZri+GrfIACD26zs+A1+Bdqf5bSkDw==
 - name: kubectl-mcp-server
   display_name: Kubectl
   description: MCP Server that enables AI assistants to interact with Kubernetes clusters
@@ -1275,6 +1315,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-dZClaWfHivwx/KSAuFplwDEZQKJr4sSZP7XPAsF7RlUNM/eU3+4uDdeqRJbA1a8pqWUokaYSfMFfgniRRpt5aw==
 - name: lara
   display_name: Lara Translate
   description: Connect to Lara Translate API, enabling powerful translation capabilities
@@ -1297,6 +1339,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-sUQhaI9ik/s9iBrYz6hYFPlZitgt7qKzFjPH24z/2SGZxfEo0EWd7LCCLIq6lg5tKmnKNj3G3qn3DYDjinU+uw==
 - name: linear
   display_name: Linear
   description: Manage Linear issues, projects, and cycles. Create and update issues,
@@ -1330,6 +1374,8 @@ mcps:
   documentation_url: https://linear.app/docs
   maintainer: Community
   version: 1.0.0
+  package_integrity:
+    npm: sha512-HNk4aB9VZzT/BYBYSe0NlbwTukJAp0PyreoQCqff+avNkaHllJq0hGuBO5W2Sk8zbBwwtj5E93b35/6gcvbp4A==
 - name: markdownify
   display_name: Markdownify
   description: A Model Context Protocol server for converting almost anything to Markdown.
@@ -1485,6 +1531,8 @@ mcps:
   maintainer: MCP Project
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-7F0hbaEB4lVqkYhNWmrC5jJjEWPCofgXd7OIk3h97HyvJL6aTAhlUNYaH8lCDxAzlK9sr2pLCkZEYI+m4HSOiA==
 - name: mermaid
   display_name: Mermaid
   description: Generate and render Mermaid diagrams. Create flowcharts, sequence diagrams,
@@ -1560,6 +1608,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-JJZKsHDggXTupvwkqav1ysw8zBs4RivXGqAiFKTZOvi7owgK5SnI+GBNvy8g3WUGY/4VMTePXpASUwtZttwbVA==
 - name: monday
   display_name: Monday.com
   description: Manage Monday.com boards, items, and workflows. Create and update items,
@@ -1593,6 +1643,8 @@ mcps:
   version: 2.0.2
   maintainer: Monday.com
   verified: true
+  package_integrity:
+    npm: sha512-2DLyDMw8kcFugrC1OLrkroRTJR+GubIgN72ydHk1rVrz5yS1v/OxlRreq+zzI6iDrmvMEO29ypNGCa2Xos6xww==
 - name: mongodb
   display_name: MongoDB
   description: Query and manage MongoDB Atlas databases. Run aggregations, manage
@@ -1628,6 +1680,8 @@ mcps:
   maintainer: MongoDB
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-y5/eCNkeZjR5mlYqVY7LuH28ervfMao+9LTtOc8RhOWgwBIBFwW7p/TFiNGFJHOhCg3sJJNEVo7SWcYQIrh1UQ==
 - name: n8n
   display_name: n8n
   description: Bridges n8n's workflow automation platform with AI models, providing
@@ -1674,6 +1728,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-1QP8XdJZ8IN6gm8xbWcR7iaqt+tnb9f4rrc2q84pgPNLhqmWyLZIbP21QzWu8lo5K1/fYIidVarabANwM5VKjg==
 - name: notion
   display_name: Notion
   description: Notion's official MCP server. Search pages, create content, manage
@@ -1711,6 +1767,8 @@ mcps:
   version: 1.0.0
   maintainer: Notion
   verified: true
+  package_integrity:
+    npm: sha512-Fw3ErV73sEI+ZrnOycR+5Lk8Ig6hEBy3EuyMlIEpb+DS18i3X1sxTWeyIC4ph1RjPVfoDAPrAREhnmMMzlG/oQ==
 - name: openapi
   display_name: OpenAPI Toolkit
   description: Fetch, validate, and generate code or curl from any OpenAPI or Swagger
@@ -1743,6 +1801,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-LfJ0arWyN9HQSCeCf3UYRlhpq3/qlyQDQ14KYEvoZGjQLqoNcZfSA9TfvXD4gMOVeJWoJAZxKyOSM8L9aTBmhQ==
 - name: openweather
   display_name: Openweather
   description: 'A simple MCP service that provides current weather and 5-day forecast
@@ -1779,6 +1839,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-/zZUprVtZqc4NxbhWR+W0Omi27K6WsbCY31mcAu9Suql3AkUE5rSyu5Ql6zPu04Ov6xkvniZ8eTrlEIBD2ue+g==
 - name: oxylabs
   display_name: Oxylabs
   description: A Model Context Protocol (MCP) server that enables AI assistants like
@@ -1851,6 +1913,8 @@ mcps:
   version: 0.0.68
   maintainer: Microsoft
   verified: true
+  package_integrity:
+    npm: sha512-Kl0a6l9VL8rvT1oBou3hS5yArjwWV9UlwAkq+0skfK1YVg8XfmmNaAmwZhMeNx/ZhGiWXfCllo6rD/jvZz+WuA==
 - name: pluggedin-mcp-proxy
   display_name: Plugged.in Proxy
   description: A unified MCP proxy that aggregates multiple MCP servers into one interface,
@@ -1901,6 +1965,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-4+1wTh12dB6eoFOVajNsR3aaVlSOwO4D90myF1RUuyotxSFNDFm9OxfOy3sG2JomKe2+zi7vMp/d+4wJ8gTNng==
 - name: postgres
   display_name: PostgreSQL
   description: Connect to PostgreSQL databases. Run queries, inspect schemas, manage
@@ -1935,6 +2001,8 @@ mcps:
   maintainer: MCP Project
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-ukbVmVxLAsdZ5pTVWbhf9fc7lqkSf7XqizNH8XAotI21GnRPtkqO+WLWpeBFU+/2Fyv63uXS7/9NnR8Y8wOP1Q==
 - name: postman
   display_name: Postman
   description: Postman's MCP server connects AI agents, assistants, and chatbots directly
@@ -1970,6 +2038,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-eLiHYYOTl4YGYiwOfEx6MdHU1ABVNBw6dFuFV8LG6kt4Q+Vczcrl3kR6jisk9W+xXNhYFnDXHmmNGGBTp4PsoQ==
 - name: prometheus
   display_name: Prometheus
   description: A Model Context Protocol (MCP) server that enables AI assistants to
@@ -2013,6 +2083,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-iln/dRdYhzrm8+YOc6yLuqcwWjtced370ME4XR79wAZkE5IpvZYdFHXSlEz0R2V0h1AvZ47R4n/iFL6eWgQeCA==
 - name: pulumi
   display_name: Pulumi
   description: Pulumi MCP server enables AI-powered coding assistants to help you
@@ -2049,6 +2121,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-ll7glJXFnj3leDpT7oP3WCRrdj3XaSiZRpY6FOXxPKXIBdKlWFTo/UQM4xQUAVN+no4ndm011nZOVzO4ds/hcQ==
 - name: puppeteer
   display_name: Puppeteer
   description: 'Browser automation using Puppeteer. Navigate pages, take screenshots,
@@ -2079,6 +2153,8 @@ mcps:
   deprecated: true
   deprecation_note: Upstream package is deprecated. Consider using the Playwright
     MCP server instead.
+  package_integrity:
+    npm: sha512-uG5QIxnnAkL6m7snXcsgC3k8ZnkYlikYZN016re6TEwtXwKUoJjRMzsqbwqw45IqP+7pXvN9vuPJ/OuHu70jow==
 - name: redis
   display_name: Redis
   description: Official Redis MCP server. Manage and search data in a Redis database (strings, hashes, lists, sets, sorted sets, streams, JSON, pub/sub) from natural language.
@@ -2194,6 +2270,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-HE8ybPRQYvRPrWyF4NarclKff9lINNAJGUst2XtMSHlW16ov7OJicCKKpzIiAxvF6th3mEMg8ER4YKR7+7YPtw==
 - name: render
   display_name: Render
   description: Interact with your Render resources via LLMs.
@@ -2227,6 +2305,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-BLOYfDElnkvuXASdadc2kbLaRhFeUm3lmNmh+7ekXQkYlApELD0nW8iGf0ZEj1arSQGbCL+w8yZr878+fHRTRA==
 - name: sentry
   display_name: Sentry
   description: Sentry's official MCP server. Search and analyze errors, retrieve issue
@@ -2263,6 +2343,8 @@ mcps:
   version: 1.0.0
   maintainer: Sentry
   verified: true
+  package_integrity:
+    npm: sha512-AwTp5n72Hu7bWXD0MdZ8nkBewGoAhnodxiMBStiMYT8ssuxpAVaG19B6cPd6C7mACvn59yke+n92PhA1/TuIWA==
 - name: sequa
   display_name: Sequa.AI
   description: Stop stitching context for Copilot and Cursor. With Sequa MCP, your
@@ -2306,6 +2388,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-3+LYte/saYSN7WgPDpi3EmgmMhpPoD+C1hk0ajAaypQjmfkJ4Xk49qmYu3c0qUH6sL9EKWH5AAQgbxFDsS7iJg==
 - name: sequential-thinking
   display_name: Sequential Thinking
   description: Dynamic, reflective problem-solving through sequential thinking. Break
@@ -2329,6 +2413,8 @@ mcps:
   version: 2025.12.18
   maintainer: MCP Project
   verified: true
+  package_integrity:
+    npm: sha512-eFR5I9Z9czXQhDn05wahetZU83YNPO+p1HLSEZZEM5q9U1CLF7zv9+TrmSBfRoPaksEAoM8pTWQ33lRCScSFeQ==
 - name: slack
   display_name: Slack
   description: Interact with Slack workspaces. Read and post messages, manage channels,
@@ -2365,6 +2451,8 @@ mcps:
   version: 2025.4.25
   maintainer: MCP Project
   verified: true
+  package_integrity:
+    npm: sha512-9WBjnxl4OgYZ1kKBqUmHbd2XVoqtnO9u8kaxSaGb4NAWf2Q4D/LV6FoJUAHPPcvKcB7AQLNJa8KO3yNOcU6fvQ==
 - name: sonarqube
   display_name: SonarQube
   description: Interact with SonarQube Cloud, Server and Community build over the
@@ -2419,6 +2507,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-SCtF/e4pRty7D1lECs+j1byckj4doj/eQ//1ROFXYe514iFwF1loNTI8PEzVPD0GQVKkeejXsPB7doD30yYN4A==
 - name: sqlite
   display_name: SQLite
   description: Query and manage SQLite databases. Run SQL queries, inspect schemas,
@@ -2521,6 +2611,8 @@ mcps:
   maintainer: Stripe
   verified: true
   version: 1.0.0
+  package_integrity:
+    npm: sha512-Ra7keWg5GKDQ7RUIDa8L3ClKMsmhsJVAXG2/rYeaICEHjyMHYhD9KL2BWVqOqr1IjQwhnA8qbf+Tnb4x09DLyQ==
 - name: supabase
   display_name: Supabase
   description: Manage Supabase projects. Query databases, manage auth users, handle
@@ -2582,6 +2674,8 @@ mcps:
   maintainer: Community
   verified: false
   version: 1.0.0
+  package_integrity:
+    npm: sha512-iJ0JRCTyNiGZzNRED2BouJF7aAKClHFLklRnZ1rLWIf7gpkYcw4PyL8RvMZ57RWCDCEoQ4pjpXuRxPHpSq1yzA==
 - name: tavily-search
   display_name: Tavily Search
   description: AI-optimized web search API. Returns clean, relevant search results
@@ -2617,6 +2711,8 @@ mcps:
   version: 0.2.17
   maintainer: Tavily
   verified: true
+  package_integrity:
+    npm: sha512-iJ0JRCTyNiGZzNRED2BouJF7aAKClHFLklRnZ1rLWIf7gpkYcw4PyL8RvMZ57RWCDCEoQ4pjpXuRxPHpSq1yzA==
 - name: temporal
   display_name: Temporal
   description: MCP support for Temporal. A comprehensive set of tools for interacting
@@ -2782,6 +2878,8 @@ mcps:
   category: Productivity
   documentation_url: https://developer.todoist.com/rest/v2/
   version: 1.0.0
+  package_integrity:
+    npm: sha512-MUpWVErDDZji+pNVeR638aJVjvh/gMHE1LmvdL+B+cBBjpCmA5AK7XIcv5xkgTm+0+rqCDJmHo4J6DSc2WlMsg==
 - name: youtube-transcript
   display_name: YouTube Transcripts
   description: Retrieves transcripts for given YouTube video URLs

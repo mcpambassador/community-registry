@@ -4,7 +4,7 @@ import { isSyncPr, pinProblem, lintEntryText, universalChecks, diffScope } from 
 
 const entry = (over = {}) => ({
   name: 'a-thing', display_name: 'A Thing', description: 'does things', transport_type: 'stdio',
-  config: { command: ['npx', '-y', 'a-thing@1.2.3'] }, auth_type: 'none', ...over,
+  config: { command: ['npx', '-y', 'a-thing@1.2.3'] }, auth_type: 'none', package_integrity: { npm: 'sha512-' + 'A'.repeat(86) + '==' }, ...over,
 });
 const synced = (over = {}) => entry({ source: 'official-registry', verified: false, ...over });
 
