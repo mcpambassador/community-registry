@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import yaml from 'js-yaml';
-import { labelsFor, CATEGORY_LABELS } from '../ci/label-category.mjs';
+import { labelsFor, changedEntries, ghBin, CATEGORY_LABELS } from '../ci/label-category.mjs';
 
 const e = (name, over = {}) => ({ name, category: 'Productivity', transport_type: 'stdio', auth_type: 'none', ...over });
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'lbl-'));
@@ -41,7 +41,7 @@ test('every category in registry.yaml has a label', () => {
   for (const m of doc.mcps) assert.ok(CATEGORY_LABELS[m.category], `no label for category "${m.category}"`);
 });
 
-const cli = (args, env = {}) => spawnSync(process.execPath, ['scripts/ci/label-category.mjs', ...args], { encoding: 'utf8', env: { ...process.env, ...env } });
+const cli = (args, env = {}) => spawnSync(process.execPath, ['scripts/ci/label-category.mjs', ...args], { encoding: 'utf8', env: { ...process.env, CI: '', ...env } });
 
 test('CLI --print against the real registry.yaml vs itself: only registry-pr', () => {
   const r = cli(['registry.yaml', '--base', 'registry.yaml', '--print']);
@@ -91,9 +91,55 @@ test('label-category workflow: base-sha code, PR head as data only, least privil
   assert.equal(base.with.ref, '${{ github.event.pull_request.base.sha }}');
   assert.ok(!job.steps.some(s => /\bnpm\b/.test(s.run ?? '')), 'vendored js-yaml: no npm install in this job');
   const run = job.steps.find(s => /label-category\.mjs/.test(s.run ?? ''));
-  assert.match(run.run, /node base\/scripts\/ci\/label-category\.mjs head\/registry\.yaml --base base\/registry\.yaml/);
+  assert.match(run.run, /node base\/scripts\/ci\/label-category\.mjs head\/registry\.yaml --base base-registry\.yaml/);
+  // TD-061: the "before" registry is the merge commit's first parent, not pull_request.base.sha
+  assert.match(run.run, /git -C head show HEAD\^1:registry\.yaml > base-registry\.yaml/);
+  assert.match(run.run, /rev-list --parents -n1 HEAD \| wc -w\)" -eq 3/, 'must be a two-parent merge commit');
+  assert.equal(job.steps.find(s => s.with?.path === 'head').with['fetch-depth'], 2);
   assert.equal(run.env.IS_FORK, '${{ github.event.pull_request.head.repo.full_name != github.repository }}');
   assert.ok(!on.workflow_run && !on.pull_request_target);
   assert.ok(!/\$\{\{/.test(run.run), 'no expression interpolation in the command');
   for (const s of job.steps) if (s.run) assert.doesNotMatch(s.run, /head\/(scripts|node_modules)/, 'never run code from the PR checkout');
+});
+
+test('TD-061: LABEL_GH_BIN hook is honoured outside CI and ignored when CI=true', () => {
+  assert.equal(ghBin({ LABEL_GH_BIN: '/x/gh' }), '/x/gh');
+  assert.equal(ghBin({ LABEL_GH_BIN: '/x/gh', CI: 'false' }), '/x/gh');
+  assert.equal(ghBin({ LABEL_GH_BIN: '/x/gh', CI: 'true' }), 'gh');
+  assert.equal(ghBin({ LABEL_GH_BIN: '/x/gh', CI: 'TRUE' }), 'gh');
+  assert.equal(ghBin({}), 'gh');
+  // end to end: with CI=true the hook binary is never run; PATH's gh is
+  const hookDir = path.join(tmp, 'hookbin'); const pathDir = path.join(tmp, 'pathbin');
+  fs.mkdirSync(hookDir); fs.mkdirSync(pathDir);
+  const mk = (d, tag) => { const f = path.join(d, 'gh'); fs.writeFileSync(f, `#!/bin/sh\necho ${tag} >> "$GH_LOG"\n`, { mode: 0o755 }); return f; };
+  const hook = mk(hookDir, 'hook'); mk(pathDir, 'path');
+  const base = write('ci-b.yaml', { mcps: [e('a')] });
+  const head = write('ci-h.yaml', { mcps: [e('a'), e('b')] });
+  const log = path.join(tmp, 'ci.log'); fs.writeFileSync(log, '');
+  const r = cli([head, '--base', base], { PR_NUMBER: '3', GH_LOG: log, LABEL_GH_BIN: hook, CI: 'true', PATH: `${pathDir}:${process.env.PATH}` });
+  assert.equal(r.status, 0, r.stderr);
+  const seen = new Set(fs.readFileSync(log, 'utf8').split('\n').filter(Boolean));
+  assert.deepEqual([...seen], ['path'], 'only the PATH gh ran');
+});
+
+// Folded in from the verifier's registry-wt-verify-fb035 scratch file (#24 re-check).
+test('labeller: only added/changed entries label; removal, reorder and identical add nothing', () => {
+  const base = { mcps: [e('a'), e('b', { category: 'Business' })] };
+  assert.deepEqual(labelsFor(base, base), ['registry-pr']);
+  assert.deepEqual(labelsFor({ mcps: [base.mcps[1], base.mcps[0]] }, base), ['registry-pr'], 'reorder');
+  assert.deepEqual(labelsFor({ mcps: [base.mcps[0]] }, base), ['registry-pr'], 'removal');
+  const changed = labelsFor({ mcps: [e('a', { auth_type: 'oauth2' }), base.mcps[1]] }, base);
+  assert.ok(changed.includes('auth: oauth2') && !changed.includes('category: business'));
+  assert.deepEqual(changedEntries({ mcps: [null, 5, e('z')] }, null).map(m => m.name), ['z']);
+  assert.ok(labelsFor({ mcps: [e('n', { category: '__proto__' })] }, base).length >= 1);
+});
+
+test('labeller CLI: IS_FORK unset fails closed (treated as same-repo); --base is required', () => {
+  const base = write('f-b.yaml', { mcps: [e('a')] });
+  const head = write('f-h.yaml', { mcps: [e('a'), e('b', { auth_type: 'static' })] });
+  const log = path.join(tmp, 'f.log'); fs.writeFileSync(log, '');
+  const r = cli([head, '--base', base], { PR_NUMBER: '9', LABEL_GH_BIN: ghMock, GH_LOG: log, GH_FAIL: '1', IS_FORK: '' });
+  assert.equal(r.status, 1, 'IS_FORK unset must fail');
+  assert.match(r.stderr, /::error::/);
+  assert.notEqual(cli([head], { PR_NUMBER: '9' }).status, 0);
 });

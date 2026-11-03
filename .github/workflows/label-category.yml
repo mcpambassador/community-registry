@@ -30,9 +30,13 @@ jobs:
           path: base
           persist-credentials: false
 
+      # TD-061: head is the PR merge commit (refs/pull/N/merge); depth 2 brings in its parents. The "before" registry is
+      # the merge commit's FIRST parent (the base branch tip the merge was made on), not pull_request.base.sha, which
+      # goes stale when main moves and would mislabel entries that changed on main.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: head
+          fetch-depth: 2
           persist-credentials: false
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -45,4 +49,9 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        run: node base/scripts/ci/label-category.mjs head/registry.yaml --base base/registry.yaml
+        run: |
+          set -euo pipefail
+          # must be a two-parent merge commit; fail loudly rather than label against the wrong base
+          test "$(git -C head rev-list --parents -n1 HEAD | wc -w)" -eq 3
+          git -C head show HEAD^1:registry.yaml > base-registry.yaml
+          node base/scripts/ci/label-category.mjs head/registry.yaml --base base-registry.yaml
