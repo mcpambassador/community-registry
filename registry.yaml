@@ -556,10 +556,10 @@ mcps:
       required: true
     - name: CB_CONNECTION_STRING
       description: Connection string for the Couchbase cluster.
-      required: false
+      required: true
     - name: CB_USERNAME
       description: Username for the Couchbase cluster with access to the bucket.
-      required: false
+      required: true
     - name: CB_MCP_READ_ONLY_MODE
       description: Setting to "true" (default) enables read-only mode; set "false" to allow write operations.
       required: false
@@ -589,6 +589,8 @@ mcps:
         env_var: CB_USERNAME
     required:
     - CB_PASSWORD
+    - cb_connection_string
+    - cb_username
     type: object
   isolation_mode: per_user
   tags:
