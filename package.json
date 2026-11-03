@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "description": "CI tooling for the MCP Ambassador community registry (validation, diff-scope, pinning, official-registry sync).",
-  "engines": { "node": ">=20" },
+  "engines": { "node": ">=22" },
   "scripts": {
-    "test": "node --test scripts/",
+    "test": "node --test \"scripts/**/*.test.mjs\"",
     "check": "node scripts/ci/check.mjs --base registry.yaml --head registry.yaml --all-pins"
   },
   "devDependencies": {
