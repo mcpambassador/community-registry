@@ -30,7 +30,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install validation dependencies (lockfile, no install scripts)
         run: npm ci --ignore-scripts --no-audit --no-fund
@@ -232,7 +232,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Registry policy checks (pins, runner guard, text lint, verified, sync diff-scope)
         env:
@@ -289,7 +289,7 @@ jobs:
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Verify pinned packages exist on npm / PyPI
         env:
