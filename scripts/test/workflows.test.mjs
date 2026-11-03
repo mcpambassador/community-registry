@@ -77,8 +77,14 @@ test('validate-registry: policy checker runs from the base ref in its own job, f
   assert.match(run, /--diff-filter=A[^\n]*\| grep -qx scripts\/ci\/check\.mjs/);
   // TD-055: bootstrap also needs the CHECKER_BOOTSTRAP repo variable to list the checker
   assert.match(run, /\[ "\$BOOT_OK" = yes \] && git -C head diff --diff-filter=A/);
-  assert.match(run, /\*,scripts\/ci\/check\.mjs,\*\) BOOT_OK=yes/);
+  assert.match(run, /\*,scripts\/ci\/check\.mjs@"\$HEAD_SHA",\*\) BOOT_OK=yes/);
+  assert.match(run, /\[ "\$HEAD_REPO" = "\$REPO" \]/);
+  assert.match(run, /tr -d '\[:space:\]'/);
+  assert.match(run, /::warning::CHECKER_BOOTSTRAP is stale; delete it/);
   assert.equal(policy.env.CHECKER_BOOTSTRAP, '${{ vars.CHECKER_BOOTSTRAP }}');
+  assert.equal(policy.env.HEAD_SHA, '${{ github.event.pull_request.head.sha }}');
+  assert.equal(policy.env.HEAD_REPO, '${{ github.event.pull_request.head.repo.full_name }}');
+  assert.equal(policy.env.REPO, '${{ github.repository }}');
   assert.match(run, /::error::[\s\S]*exit 1/);
   assert.match(run, /::warning::/);
   assert.match(run, /node "\$CHECKER_DIR\/scripts\/ci\/check\.mjs"/);
@@ -96,7 +102,12 @@ test('validate-registry: package-exists bootstrap is gated by the CHECKER_BOOTST
   const wf = yaml.load(fs.readFileSync(path.join(dir, 'validate-registry.yml'), 'utf8'));
   const step = wf.jobs['package-exists'].steps.find(s => /package-exists\.mjs/.test(s.run ?? ''));
   assert.equal(step.env.CHECKER_BOOTSTRAP, '${{ vars.CHECKER_BOOTSTRAP }}');
-  assert.match(step.run, /\*,scripts\/ci\/package-exists\.mjs,\*\) BOOT_OK=yes/);
+  assert.match(step.run, /\*,scripts\/ci\/package-exists\.mjs@"\$HEAD_SHA",\*\) BOOT_OK=yes/);
+  assert.match(step.run, /\[ "\$HEAD_REPO" = "\$REPO" \]/);
+  assert.match(step.run, /::warning::CHECKER_BOOTSTRAP is stale; delete it/);
+  assert.equal(step.env.HEAD_SHA, '${{ github.event.pull_request.head.sha }}');
+  assert.equal(step.env.HEAD_REPO, '${{ github.event.pull_request.head.repo.full_name }}');
+  assert.equal(step.env.REPO, '${{ github.repository }}');
   assert.match(step.run, /\[ "\$BOOT_OK" = yes \] && git -C head diff --diff-filter=A/);
   assert.match(step.run, /::error::[\s\S]*exit 1/);
 });

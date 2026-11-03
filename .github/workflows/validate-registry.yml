@@ -241,17 +241,25 @@ jobs:
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           SYNC_APP_LOGIN: ${{ vars.SYNC_APP_LOGIN }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          # TD-055: repo variable (Settings > Variables), not PR-controlled. Comma-separated checker paths a maintainer
-          # has allowed to bootstrap. Set it only while a reviewed PR (re)introduces the checker, then delete it.
+          # TD-055: repo variable (Settings > Variables), not PR-controlled. Comma-separated <checker path>@<PR head sha> entries a
+          # maintainer has allowed to bootstrap (one PR, one commit, same repo). Set it only while a reviewed PR (re)introduces the checker, then delete it.
           CHECKER_BOOTSTRAP: ${{ vars.CHECKER_BOOTSTRAP }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
         run: |
           set -eu
           git -C head fetch --no-tags --depth=1 origin "$BASE_SHA"
           git -C head diff --name-only "$BASE_SHA" HEAD > "$RUNNER_TEMP/changed-files.txt"
           BOOT_OK=no
-          case ",$(printf '%s' "${CHECKER_BOOTSTRAP:-}" | tr -d ' ')," in *,scripts/ci/check.mjs,*) BOOT_OK=yes ;; esac
+          BOOT_LIST=",$(printf '%s' "${CHECKER_BOOTSTRAP:-}" | tr -d '[:space:]'),"
+          # bound to this one commit of a same-repo PR: entries are <path>@<head sha>
+          if [ "$HEAD_REPO" = "$REPO" ]; then
+            case "$BOOT_LIST" in *,scripts/ci/check.mjs@"$HEAD_SHA",*) BOOT_OK=yes ;; esac
+          fi
           if [ -f base/scripts/ci/check.mjs ]; then
             CHECKER_DIR=base
+            if [ "$BOOT_LIST" != ",," ]; then echo "::warning::CHECKER_BOOTSTRAP is stale; delete it"; fi
             (cd base && npm ci --ignore-scripts --no-audit --no-fund)
           elif [ "$BOOT_OK" = yes ] && git -C head diff --diff-filter=A --name-only "$BASE_SHA" HEAD | grep -qx scripts/ci/check.mjs; then
             # Bootstrap: this PR itself introduces the checker, so the base has none to trust. Honoured only while a
@@ -260,7 +268,7 @@ jobs:
             CHECKER_DIR=head
             (cd head && npm ci --ignore-scripts --no-audit --no-fund)
           else
-            echo "::error::base has no scripts/ci/check.mjs and bootstrapping it is not allowed (the PR must add it AND a maintainer must list scripts/ci/check.mjs in the CHECKER_BOOTSTRAP repo variable); refusing to skip policy checks"
+            echo "::error::base has no scripts/ci/check.mjs and bootstrapping it is not allowed (the PR must add it AND a maintainer must list scripts/ci/check.mjs@<PR head sha> in the CHECKER_BOOTSTRAP repo variable, for a same-repo PR); refusing to skip policy checks"
             exit 1
           fi
           node "$CHECKER_DIR/scripts/ci/check.mjs" --base base/registry.yaml --head head/registry.yaml --changed-files "$RUNNER_TEMP/changed-files.txt" --all-pins
@@ -295,20 +303,28 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CHECKER_BOOTSTRAP: ${{ vars.CHECKER_BOOTSTRAP }} # TD-055: see policy-checks
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          REPO: ${{ github.repository }}
         run: |
           set -eu
           git -C head fetch --no-tags --depth=1 origin "$BASE_SHA"
           BOOT_OK=no
-          case ",$(printf '%s' "${CHECKER_BOOTSTRAP:-}" | tr -d ' ')," in *,scripts/ci/package-exists.mjs,*) BOOT_OK=yes ;; esac
+          BOOT_LIST=",$(printf '%s' "${CHECKER_BOOTSTRAP:-}" | tr -d '[:space:]'),"
+          # bound to this one commit of a same-repo PR: entries are <path>@<head sha>
+          if [ "$HEAD_REPO" = "$REPO" ]; then
+            case "$BOOT_LIST" in *,scripts/ci/package-exists.mjs@"$HEAD_SHA",*) BOOT_OK=yes ;; esac
+          fi
           if [ -f base/scripts/ci/package-exists.mjs ]; then
             CHECKER_DIR=base
+            if [ "$BOOT_LIST" != ",," ]; then echo "::warning::CHECKER_BOOTSTRAP is stale; delete it"; fi
             (cd base && npm ci --ignore-scripts --no-audit --no-fund)
           elif [ "$BOOT_OK" = yes ] && git -C head diff --diff-filter=A --name-only "$BASE_SHA" HEAD | grep -qx scripts/ci/package-exists.mjs; then
             echo "::warning::base has no scripts/ci/package-exists.mjs and this PR adds it; running the PR's own checker (bootstrap only)"
             CHECKER_DIR=head
             (cd head && npm ci --ignore-scripts --no-audit --no-fund)
           else
-            echo "::error::base has no scripts/ci/package-exists.mjs and bootstrapping it is not allowed (the PR must add it AND a maintainer must list scripts/ci/package-exists.mjs in the CHECKER_BOOTSTRAP repo variable); refusing to skip the check"
+            echo "::error::base has no scripts/ci/package-exists.mjs and bootstrapping it is not allowed (the PR must add it AND a maintainer must list scripts/ci/package-exists.mjs@<PR head sha> in the CHECKER_BOOTSTRAP repo variable, for a same-repo PR); refusing to skip the check"
             exit 1
           fi
           node "$CHECKER_DIR/scripts/ci/package-exists.mjs" --base base/registry.yaml --head head/registry.yaml
