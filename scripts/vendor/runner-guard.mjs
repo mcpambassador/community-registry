@@ -1,4 +1,4 @@
-// VENDORED from mcpambassador/server packages/server/src/services/runner-guard.ts @ 328dd5f (TD-039, server #146).
+// VENDORED from mcpambassador/server packages/server/src/services/runner-guard.ts @ 3a67aaf (TD-039/042/043, server main v0.10.4).
 // Transpiled TS->ESM with no other change; do not edit here, re-vendor from the server (TD-043).
 /**
  * Runner guard (TD-039): rejects MCP configs that redirect the package runner (npx, uvx, node, ...)
@@ -58,7 +58,7 @@ const STRICT_ALLOWED = {
 };
 /** Subcommand words skipped (not treated as the package) while scanning, per family. */
 const SUBCOMMANDS = {
-    uv: ['tool', 'run', 'pip', 'install', 'uninstall', 'x', 'exec'],
+    uv: ['tool', 'run', 'pip', 'install', 'uninstall', 'x', 'exec', 'add'],
     deno: [
         'run',
         'task',
@@ -168,6 +168,26 @@ const DENIED_SUBCOMMANDS = {
     deno: ['eval', 'repl'],
     bun: ['repl'],
 };
+/** CLIs that share docker's `run` option grammar; all go through the default-deny docker check. */
+const DOCKER_FAMILY = ['docker', 'podman', 'nerdctl', 'finch', 'podman-remote'];
+/** Low-level runtimes with no safe `run` subset; refused outright. */
+const REFUSED_RUNNERS = [
+    'ctr',
+    'crictl',
+    'kubectl',
+    'buildah',
+    'runc',
+    'crun',
+    'nsenter',
+    'unshare',
+    'systemd-nspawn',
+    'bwrap',
+    'lxc-execute',
+    'chroot',
+];
+function isDockerFamily(base) {
+    return DOCKER_FAMILY.includes(base);
+}
 function baseOf(command) {
     // Basename, lowercase, no Windows extension: `/usr/bin/NPX.cmd` -> `npx`.
     return (command.split(/[\\/]/).pop() ?? '').toLowerCase().replace(/\.(cmd|exe|bat)$/, '');
@@ -213,7 +233,181 @@ export function checkRunnerCommand(command) {
     const first = command[0];
     if (typeof first !== 'string')
         return null;
-    return scan(baseOf(first), command, 1);
+    const base = baseOf(first);
+    if (REFUSED_RUNNERS.includes(base))
+        return 'container runner not permitted';
+    if (isDockerFamily(base))
+        return checkDockerRun(command);
+    return scan(base, command, 1);
+}
+// ---------------------------------------------------------------------------------------------
+// docker / podman (TD-042). DEFAULT-DENY: only `run` with a short list of confinement-preserving
+// options. `docker` is NOT in the default command allowlist; this guards operators who add it via
+// MCP_ALLOWED_COMMANDS. Enabling docker at all needs the Docker socket, which is host-root
+// equivalent: unsupported for untrusted MCPs, whatever this guard accepts.
+// ---------------------------------------------------------------------------------------------
+/** Boolean options (no value, no `=value`). Short ones may be clustered (`-iq`). */
+const DOCKER_BOOL_LONG = ['rm', 'interactive', 'init', 'read-only', 'quiet'];
+const DOCKER_BOOL_SHORT = ['i', 'q'];
+const DOCKER_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$/;
+const DOCKER_IMAGE_RE = /^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,254}$/;
+function dockerUserOk(v) {
+    const parts = v.split(':');
+    if (parts.length > 2)
+        return false;
+    // Numeric, non-zero only. A user NAME is resolved through the image's own /etc/passwd, which the
+    // image controls, so any name (not just "root") can map to uid 0 and defeat the check.
+    return parts.every(p => /^\d{1,10}$/.test(p) && Number(p) > 0);
+}
+/** Value validators by canonical option name. Return true when the value is acceptable. */
+const DOCKER_VALUE_RULES = {
+    pull: v => ['always', 'missing', 'never'].includes(v),
+    network: v => v === 'none' || v === 'bridge',
+    memory: v => /^[1-9]\d{0,12}[bkmg]?$/i.test(v),
+    cpus: v => /^(?:\d{1,3})(?:\.\d{1,3})?$/.test(v) && Number(v) > 0,
+    'pids-limit': v => /^[1-9]\d{0,6}$/.test(v),
+    user: dockerUserOk,
+    'cap-drop': v => v.toLowerCase() === 'all',
+    'security-opt': v => /^no-new-privileges(?:[=:]true)?$/.test(v),
+    name: v => DOCKER_NAME_RE.test(v),
+    workdir: v => /^\/[A-Za-z0-9_./-]{0,255}$/.test(v) && !v.split('/').includes('..'),
+};
+const DOCKER_LONG_ALIASES = { net: 'network' };
+const DOCKER_SHORT_VALUE = { m: 'memory', u: 'user', w: 'workdir' };
+function parseDockerRun(command) {
+    const r = parseDockerRunInner(command);
+    return typeof r === 'string' ? { error: r, image: null } : { error: null, image: r.image };
+}
+export function checkDockerRun(command) {
+    return parseDockerRun(command).error;
+}
+function parseDockerRunInner(command) {
+    const sub = typeof command[1] === 'string' ? command[1].trim().toLowerCase() : '';
+    // Options before the subcommand (-H, --context, --config, --host ...) redirect the daemon.
+    if (sub !== 'run') {
+        return `docker subcommand not permitted: ${safeToken(typeof command[1] === 'string' ? command[1] : '')} (only 'run')`;
+    }
+    const take = (flag, name, value) => {
+        const rule = DOCKER_VALUE_RULES[name];
+        if (!rule)
+            return `docker option not permitted: ${safeToken(flag)}`;
+        if (value === undefined || !rule(value)) {
+            return `docker option value not permitted: ${safeToken(flag)}`;
+        }
+        return null;
+    };
+    for (let i = 2; i < command.length; i++) {
+        const raw = command[i];
+        if (typeof raw !== 'string')
+            return 'docker argument must be a string';
+        const tok = raw.trim();
+        if (tok === '--')
+            return 'docker option not permitted: --';
+        if (!tok.startsWith('-') || tok === '-') {
+            if (!DOCKER_IMAGE_RE.test(tok))
+                return 'docker image reference not permitted';
+            return { image: tok }; // the rest belongs to the container
+        }
+        if (tok.startsWith('--')) {
+            const eq = tok.indexOf('=');
+            const flag = (eq >= 0 ? tok.slice(0, eq) : tok).toLowerCase();
+            const name0 = flag.slice(2);
+            const name = DOCKER_LONG_ALIASES[name0] ?? name0;
+            if (DOCKER_BOOL_LONG.includes(name)) {
+                if (eq >= 0)
+                    return `docker option not permitted: ${safeToken(flag)}`;
+                continue;
+            }
+            let value;
+            if (eq >= 0)
+                value = tok.slice(eq + 1);
+            else {
+                const next = command[i + 1];
+                value = typeof next === 'string' ? next.trim() : undefined;
+                i++;
+            }
+            const r = take(flag, name, value);
+            if (r)
+                return r;
+            continue;
+        }
+        // Short option or cluster: -i, -iq, -m512m, -u1000, -w /app
+        const letters = tok.slice(1);
+        for (let k = 0; k < letters.length; k++) {
+            const ch = letters[k].toLowerCase();
+            if (DOCKER_BOOL_SHORT.includes(ch))
+                continue;
+            const name = DOCKER_SHORT_VALUE[ch];
+            if (!name)
+                return `docker option not permitted: ${safeToken(`-${ch}`)}`;
+            let value = letters.slice(k + 1);
+            if (value.startsWith('='))
+                value = value.slice(1);
+            if (value === '') {
+                const next = command[i + 1];
+                value = typeof next === 'string' ? next.trim() : '';
+                i++;
+            }
+            const r = take(`-${ch}`, name, value);
+            if (r)
+                return r;
+            break;
+        }
+    }
+    return 'docker image reference missing';
+}
+/**
+ * Non-fatal advice for a docker/podman command that passed {@link checkRunnerCommand}: an image
+ * without a digest is mutable. Prefer `name@sha256:...`. Returns null when fine or not docker.
+ */
+export function runnerWarning(command) {
+    if (!Array.isArray(command) || typeof command[0] !== 'string')
+        return null;
+    const base = baseOf(command[0]);
+    if (!isDockerFamily(base))
+        return null;
+    const { error, image } = parseDockerRun(command);
+    if (error)
+        return null;
+    if (!image || image.includes('@sha256:'))
+        return null;
+    return image.split('/').pop()?.includes(':') && !/:latest$/.test(image)
+        ? 'docker image is pinned by tag only; prefer a @sha256 digest'
+        : 'docker image has no pinned version or digest; prefer a @sha256 digest';
+}
+/** Non-registry sources: VCS/URL schemes, standalone or as the `name@<source>` / `name @ <source>` form. */
+const SOURCE_SCHEME_RE = /(^|@|\s)(git\+|git:|git@|github:|gitlab:|bitbucket:|gist:|file:|ssh:|link:|http:|https:|ftp:|data:|blob:)/i;
+const ARCHIVE_RE = /\.(tgz|tar|tar\.gz|zip|whl)$/i;
+/** npm treats `owner/repo` (no @scope, not a path) as a GitHub shorthand. */
+const GITHUB_SHORTHAND_RE = /^[A-Za-z0-9][\w.-]*\/[\w.-]+(#.*)?$/;
+/** Install-style subcommands: EVERY following positional is a package spec, not just the first. */
+const INSTALL_SUBCOMMANDS = ['add', 'install', 'i'];
+/** pip positionals that are local paths (`./x`, `/x`, `~/x`, `.`, `a/b`, `C:\\x`). */
+const LOCAL_PATH_RE = /^(\.|~)|[\\/]/;
+/** `tok` is the package/script positional of a runner. Returns a generic reason, or null. */
+function checkPackageSpec(family, tok) {
+    const bad = () => 'runner package source not permitted (git, URL or archive spec)';
+    if (tok.includes('://') || SOURCE_SCHEME_RE.test(tok))
+        return bad();
+    if ((family === 'npx' || family === 'uv' || family === 'pip') && ARCHIVE_RE.test(tok)) {
+        return bad();
+    }
+    // pip: a local directory or file is a source too (`pip install .`, `./pkg`, `/abs/pkg`).
+    if (family === 'pip' && LOCAL_PATH_RE.test(tok))
+        return bad();
+    if (family === 'npx' && GITHUB_SHORTHAND_RE.test(tok))
+        return bad();
+    return null;
+}
+/**
+ * deno/bun have many value-less flags (--allow-net, --deny-*, --unstable-*, --no-lock ...). They are
+ * treated as boolean so the script/package that follows is not swallowed. Unknown `=`-less flags
+ * still swallow the next token, but that token is spec-checked (see scan), so a URL there is refused.
+ */
+function isKnownBoolFlag(family, name) {
+    if (family !== 'deno' && family !== 'bun')
+        return false;
+    return /^(allow-|deny-|unstable|no-|smol$|hot$|watch$|watch-|inspect$|prefer-|frozen|bun$|silent$)/.test(name);
 }
 function scan(base, command, start) {
     const family = familyOf(base);
@@ -225,6 +419,9 @@ function scan(base, command, start) {
     const pm = isPackageManagerCli(base);
     let swallowNext = false;
     let subSeen = false;
+    let installMode = false;
+    // After a bare `--` every token is a positional (the package is still the next one).
+    let afterDashes = false;
     for (let i = start; i < command.length; i++) {
         const rawTok = command[i];
         if (typeof rawTok !== 'string')
@@ -232,28 +429,61 @@ function scan(base, command, start) {
         // A single element holding "--registry evil" is not an option to the runner, but treat the first
         // word as one: stricter, never looser.
         const tok = rawTok.trim();
-        if (tok === '--')
-            return null;
-        if (!tok.startsWith('-') || tok === '-') {
+        if (tok === '--' && !afterDashes) {
+            afterDashes = true;
+            swallowNext = false;
+            continue;
+        }
+        if (afterDashes || !tok.startsWith('-') || tok === '-') {
             if (swallowNext) {
                 swallowNext = false;
+                // An option VALUE that is a git/URL/archive spec is never legitimate before the package, and
+                // a mis-guessed boolean flag would otherwise hide the real package here.
+                if (family !== 'other') {
+                    const r = checkPackageSpec(family, tok);
+                    if (r)
+                        return r;
+                }
                 continue;
             }
             const low = tok.toLowerCase();
             if (deniedSub.includes(low))
                 return `runner subcommand not permitted: ${safeToken(tok)}`;
-            // pip: `install -c file` puts options AFTER the subcommand, so keep scanning.
-            if (family === 'pip')
+            // Install-style (`add`, `install`): every positional is a package spec.
+            if (installMode) {
+                const r = checkPackageSpec(family, tok);
+                if (r)
+                    return r;
                 continue;
+            }
+            // pip: the first positional is the subcommand; `install -c file` puts options AFTER it, so
+            // keep scanning, and check EVERY later positional (name, archive, URL, local path).
+            if (family === 'pip') {
+                if (!subSeen) {
+                    subSeen = true;
+                    continue;
+                }
+                const r = checkPackageSpec(family, tok);
+                if (r)
+                    return r;
+                continue;
+            }
             // npm/pnpm/yarn: the first positional is a subcommand (exec, dlx, ...); the package follows it.
             if (pm && !subSeen) {
                 subSeen = true;
+                if (INSTALL_SUBCOMMANDS.includes(low))
+                    installMode = true;
                 continue;
             }
             // uv / deno / bun: skip known subcommand words, the next positional is the tool or script.
-            if (subcommands.includes(low))
+            if (subcommands.includes(low)) {
+                if (INSTALL_SUBCOMMANDS.includes(low))
+                    installMode = true;
                 continue;
-            return null; // package / script: the rest belongs to the launched program
+            }
+            // package / script: the rest belongs to the launched program, but the spec itself must come
+            // from the package registry, not an arbitrary git/URL/tarball source (TD-042).
+            return checkPackageSpec(family, tok);
         }
         const head = tok.split(/\s/)[0] ?? tok;
         const eq = head.indexOf('=');
@@ -283,7 +513,7 @@ function scan(base, command, start) {
                 /^@?[\w-]+:registry$/.test(name)) {
                 return `runner option not permitted: ${safeToken(flag)}`;
             }
-            swallowNext = eq < 0 && !matches(rules.bool, name);
+            swallowNext = eq < 0 && !matches(rules.bool, name) && !isKnownBoolFlag(family, name);
             continue;
         }
         // Short option or cluster: `-p`, `-pe`, `-pFOO`, `-ihttps://...`
@@ -320,6 +550,10 @@ const ENV_PREFIXES = [
     'dyld_',
     'yarn_',
     'pnpm_',
+    'docker_',
+    'container_',
+    'podman_', // PODMAN_CONNECTIONS_CONF, PODMAN_HOST ...: redirect the daemon
+    'containers_', // CONTAINERS_CONF, CONTAINERS_REGISTRIES_CONF, CONTAINERS_STORAGE_CONF ...
     'bun_',
     'deno_',
     'git_',
@@ -332,6 +566,9 @@ const ENV_PREFIXES = [
 const ENV_SUFFIXES = ['_proxy'];
 /** Case-insensitive exact names. */
 const ENV_EXACT = [
+    'registry_auth_file',
+    'storage_driver',
+    'storage_opts',
     'path',
     'pathext',
     'home',
@@ -351,6 +588,11 @@ const ENV_EXACT = [
 ];
 /** Exceptions to the prefixes: not a redirect, and widely set by operators. */
 const ENV_ALLOWED = ['node_env'];
+/**
+ * SECURITY (TD-052): this blocklist is load-bearing. Child MCPs are launched through `setpriv`, which runs
+ * with the server's ambient CAP_SETUID/SETGID/KILL and the child's env, so loader/runtime redirects
+ * (LD_*, GCONV_PATH, ...) must never reach it from config.env.
+ */
 /** True when `name` may not be set through a catalog config, a credential field or an OAuth binding. */
 export function isBlockedEnvName(name) {
     const n = name.trim().toLowerCase();
